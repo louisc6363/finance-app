@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = getCalculatedData();
         let ms = animate ? 1500 : 0;
         animateValue('total-networth', data.netWorth, ms);
-        animateValue('monthly-surplus', data.cashflowSurplus, ms);
+        animateValue('monthly-surplus', data.currentCash, ms); // 修正：此處應顯示總現金，而非僅本月盈餘
         animateValue('total-assets', data.totalAssets, ms);
         animateValue('total-liabilities', data.totalDebts, ms);
 
@@ -895,4 +895,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvestments();
     renderDebts();
     fetchPrices();
+
+    // [新增] 背景同步機制：每 60 秒自動更新一次全球報價，讓總覽數字隨市場波動
+    setInterval(() => {
+        fetchPrices();
+    }, 60000);
 });
