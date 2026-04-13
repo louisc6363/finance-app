@@ -502,6 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.innerHTML = '新增至投資組合'; submitBtn.style.background = 'linear-gradient(135deg, #38bdf8, #8b5cf6)';
             } else {
                 let invId = Date.now().toString();
+                let existingIdx = state.investments.findIndex(i => i.symbol === symbol && i.type === type);
                 if (existingIdx !== -1) {
                     state.investments[existingIdx].amount += invData.amount;
                     state.investments[existingIdx].totalCost += invData.totalCost;
