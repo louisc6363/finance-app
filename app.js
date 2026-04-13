@@ -523,16 +523,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.investments.push(invData);
                 }
                 
-                // [連動系統] 自動產生一筆支出紀錄
-                state.transactions.unshift({
-                    id: 'sys-' + Date.now(),
-                    type: 'expense',
-                    amount: calculatedTotalCost,
-                    category: '[系統] 投資買入',
-                    date: today,
-                    relatedAsset: symbol,
-                    linkId: invId // [精準連動] 綁定此部位專屬 ID
-                });
+                // [連動系統] 僅當用戶勾選「同步產生支出」時才扣除現金
+                const syncCash = document.getElementById('i-sync-cash')?.checked;
+                if (syncCash) {
+                    state.transactions.unshift({
+                        id: 'sys-' + Date.now(),
+                        type: 'expense',
+                        amount: calculatedTotalCost,
+                        category: '[系統] 投資買入',
+                        date: today,
+                        relatedAsset: symbol,
+                        linkId: invId // [精準連動] 綁定此部位專屬 ID
+                    });
+                }
             }
             saveState(); iForm.reset(); fetchPrices();
         });

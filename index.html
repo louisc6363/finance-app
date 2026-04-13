@@ -208,6 +208,15 @@
                                 </label>
                                 <input type="number" id="i-cost" placeholder="請輸入您買入時的平均單一價格 (上方自選幣別)" step="any" required min="0">
                             </div>
+                            <div class="form-group" style="padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <label class="ios-switch-label" style="display:flex; align-items:center; cursor:pointer;" title="取消勾選此項可建立『期初資產』，系統將不會從目前的現金中扣除買入成本。">
+                                    <div class="ios-switch" style="margin-right: 12px;">
+                                        <input type="checkbox" id="i-sync-cash" checked>
+                                        <span class="ios-slider"></span>
+                                    </div>
+                                    <span style="font-size:0.9rem; font-weight:600; color:var(--primary);">同步產生支出交易 (從現金池扣除)</span>
+                                </label>
+                            </div>
                             <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #38bdf8, #8b5cf6);">新增至投資組合</button>
                         </form>
                     </div>
