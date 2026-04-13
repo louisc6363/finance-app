@@ -840,8 +840,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div class="item-actions" style="gap: 5px;">
-                            <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="color: #10b981; border-color: rgba(16, 185, 129, 0.2);"><i class="fa-solid fa-circle-plus"></i> 買</button>
-                            <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);"><i class="fa-solid fa-circle-minus"></i> 賣</button>
+                            <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: #ffffff; border: none; padding: 4px 12px; font-weight: 600;"><i class="fa-solid fa-circle-plus"></i> 買</button>
+                            <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: #ffffff; border: none; padding: 4px 12px; font-weight: 600;"><i class="fa-solid fa-circle-minus"></i> 賣</button>
                             <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
                             <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
                         </div>
