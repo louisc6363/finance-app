@@ -283,11 +283,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime();
 
         let tIncome = 0, tExpense = 0;
+        let cumulativeSurplus = 0; // 改為累計所有歷史交易
+
         state.transactions.forEach(t => {
             const txTime = new Date(t.date).getTime();
+            const amount = Number(t.amount);
+            
+            // 累計歷史總量
+            if (t.type === 'income') cumulativeSurplus += amount;
+            else if (t.type === 'expense') cumulativeSurplus -= amount;
+
+            // 僅本月統計 (用於收支分析圖表)
             if (txTime >= startOfMonth && txTime <= endOfMonth) {
-                if (t.type === 'income') tIncome += Number(t.amount);
-                if (t.type === 'expense') tExpense += Number(t.amount);
+                if (t.type === 'income') tIncome += amount;
+                if (t.type === 'expense') tExpense += amount;
             }
         });
 
@@ -304,7 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        let currentCash = state.baseCash + cashflowSurplus;
+        // 核心修正：目前現金 = 基準現金 + 所有歷史交易加總
+        let currentCash = state.baseCash + cumulativeSurplus;
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
         state.debts.forEach(d => totalDebts += Number(d.total));
@@ -501,6 +511,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     invData.id = Date.now().toString();
                     state.investments.push(invData);
                 }
+                
+                // [連動系統] 自動產生一筆支出紀錄
+                state.transactions.unshift({
+                    id: 'sys-' + Date.now(),
+                    type: 'expense',
+                    amount: calculatedTotalCost,
+                    category: '[系統] 投資買入',
+                    date: today,
+                    relatedAsset: symbol
+                });
             }
             saveState(); iForm.reset(); fetchPrices();
         });
@@ -596,7 +616,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (action === 'buy') {
                 target.totalCost += cost;
                 target.amount += amount;
-                alert(`買進成功！已為您自動納入投資組合。`);
+
+                // [連動系統]
+                state.transactions.unshift({
+                    id: 'sys-' + Date.now(),
+                    type: 'expense',
+                    amount: cost,
+                    category: '[系統] 投資買入',
+                    date: today,
+                    relatedAsset: target.symbol
+                });
+                alert(`買進成功！我們已自動為您記錄一筆現金流支出。`);
             } else if (action === 'sell') {
                 if (amount > target.amount) {
                     return alert(`賣出無效保護：您填寫的需求賣出數量 (${amount}) 大於目前的庫存總量 (${target.amount})！`);
@@ -608,7 +638,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     target.amount = 0;
                     target.totalCost = 0;
                 }
-                alert(`賣出成功！`);
+
+                // [連動系統]
+                state.transactions.unshift({
+                    id: 'sys-' + Date.now(),
+                    type: 'income',
+                    amount: cost,
+                    category: '[系統] 投資賣出',
+                    date: today,
+                    relatedAsset: target.symbol
+                });
+                alert(`賣出成功！變現資金已轉回現金水位。`);
             }
 
             saveState();
