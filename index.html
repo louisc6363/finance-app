@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>財務管家 | Personal Finance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="cashflow.css">
+    <link rel="stylesheet" href="modules.css">
+    <link rel="stylesheet" href="cashflow.css?v=3">
+    <link rel="stylesheet" href="modules.css?v=3">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+                <h1>NetWorth.</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><a href="#" data-page="dashboard"><i class="fa-solid fa-border-all"></i> 總覽</a></li>
+                <li><a href="#" data-page="cashflow"><i class="fa-solid fa-money-bill-transfer"></i> 收支分析</a></li>
+                <li><a href="#" data-page="investments"><i class="fa-solid fa-chart-pie"></i> 投資組合</a></li>
+                <li><a href="#" data-page="liabilities"><i class="fa-solid fa-credit-card"></i> 負債管理</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header>
+                <div class="greeting">
+                    <h2>早安！</h2>
+                    <p>您的財務狀況看起來非常穩健健康。</p>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&rounded=true" alt="User Avatar">
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="page-section active">
+                <div class="summary-cards">
+                    <div class="card glass primary-card" style="position:relative;">
+                        <div class="card-title">總淨值 (Net Worth)</div>
+                        <div class="card-value glow" id="total-networth">NT$ 0</div>
+                        <div class="pnl-toggle-wrapper" title="關閉時，總淨值僅會加上您的投入本金，過濾市場高低起伏">
+                            <span class="pnl-toggle-label">含未實現損益</span>
+                            <label class="ios-switch">
+                                <input type="checkbox" id="toggle-invest-pnl" checked>
+                                <span class="ios-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>現金存款池</span>
+                            <button id="edit-cash-btn" class="action-btn" style="padding: 3px 12px; font-size: 0.75rem; border-radius:15px; border:1px solid rgba(255,255,255,0.2); width:auto; height: 28px;"><i class="fa-solid fa-pen" style="pointer-events: none;"></i><span style="pointer-events: none; margin-left: 6px; font-weight:600;">編 輯</span></button>
+                        </div>
+                        <div class="card-value positive" id="monthly-surplus">NT$ 0</div>
+                        <div class="card-subtitle" style="margin-top: 5px;">點擊上方編輯更新真實餘額</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-title">總資產 (Assets)</div>
+                        <div class="card-value text-default" id="total-assets">NT$ 0</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-title">總負債 (Liabilities)</div>
+                        <div class="card-value negative" id="total-liabilities">NT$ 0</div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="card glass chart-card asset-chart-card">
+                        <h3>總資產配置</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="assetChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card glass chart-card cashflow-chart-card">
+                        <h3>近六個月收支趨勢</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="cashflowChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Placeholders for other pages -->
+            <section id="cashflow" class="page-section">
+                <header>
+                    <div class="greeting">
+                        <h2>收支分析與記帳</h2>
+                        <p>紀錄每一筆改變淨值的交易。</p>
+                    </div>
+                </header>
+                <div class="cashflow-container">
+                    <div class="card glass form-card">
+                        <h3>新增紀錄</h3>
+                        <form id="transaction-form">
+                            <div class="form-group">
+                                <label>收支類型</label>
+                                <select id="t-type">
+                                    <option value="expense">支出 (Expense)</option>
+                                    <option value="income">收入 (Income)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>金額 (NT$)</label>
+                                <input type="number" id="t-amount" placeholder="輸入金額" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>分類 (點選標籤或手動輸入)</label>
+                                <div id="category-chips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;"></div>
+                                <input type="text" id="t-category" placeholder="輸入分類..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>日期</label>
+                                <input type="date" id="t-date" required>
+                            </div>
+                            <button type="submit" class="submit-btn">加入紀錄</button>
+                        </form>
+                    </div>
+                    <div class="card glass list-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3>近期紀錄</h3>
+                            <button type="button" id="open-analytics-btn" class="action-btn" style="background: var(--primary); color: white; border-radius: 6px; padding: 4px 12px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-chart-pie" style="padding-right:5px;"></i>圖表分析
+                            </button>
+                        </div>
+                        
+                        <div class="filter-controls" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                            <select id="filter-range" class="form-group" style="padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1);">
+                                <option value="all">全部紀錄</option>
+                                <option value="today">今天</option>
+                                <option value="1m">近一個月</option>
+                                <option value="2m">近二個月</option>
+                                <option value="3m">近三個月</option>
+                                <option value="6m">近半年</option>
+                                <option value="1y">近一年</option>
+                                <option value="custom-day">指定日期</option>
+                                <option value="custom-range">自訂區間</option>
+                            </select>
+                            
+                            <div id="filter-custom-day-box" style="display:none;">
+                                <input type="date" id="filter-date" style="padding: 8px; border-radius: 8px; width: 100%;">
+                            </div>
+                            <div id="filter-custom-range-box" style="display:none; gap: 10px; align-items:center;">
+                                <input type="date" id="filter-start" style="padding: 8px; border-radius: 8px; flex: 1;">
+                                <span style="color:var(--text-muted);">至</span>
+                                <input type="date" id="filter-end" style="padding: 8px; border-radius: 8px; flex: 1;">
+                            </div>
+                        </div>
+
+                        <div class="transaction-list" id="transaction-list">
+                            <!-- JS 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="investments" class="page-section">
+                <header>
+                    <div class="greeting">
+                        <h2>投資組合管理</h2>
+                        <p>追蹤您的數位資產，串接即時報價更新部位價值。</p>
+                    </div>
+                </header>
+                <div class="module-container">
+                    <div class="card glass form-card">
+                        <h3>新增資產部位</h3>
+                        <form id="invest-form">
+                            <div class="form-group">
+                                <label>資產類別</label>
+                                <select id="i-type">
+                                    <option value="crypto">加密貨幣 (Crypto)</option>
+                                    <option value="tw_stock">台灣股市與 ETF (TW Stock)</option>
+                                    <option value="us_stock">美國股市與 ETF (US Stock)</option>
+                                    <option value="commodity">貴金屬/原物料/匯率 (Commodity)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="position: relative;">
+                                <label>標的代號 / 公司名稱</label>
+                                <input type="text" id="i-symbol" placeholder="搜索代號或名稱 (支援模糊搜尋)" required style="text-transform: uppercase;" autocomplete="off">
+                                <ul id="symbol-suggestions" class="suggestions-list" style="display:none;"></ul>
+                            </div>
+                            <div class="form-group">
+                                <label>持有總數量 <span id="amount-hint" style="font-size:0.8rem; color:var(--text-muted);">(例如: 0.05 顆)</span></label>
+                                <input type="number" id="i-amount" placeholder="您目前持有的數量" step="any" required min="0">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span>平均買入單價</span>
+                                    <select id="i-currency" style="padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; cursor: pointer;">
+                                        <option value="TWD">TWD</option>
+                                        <option value="USD">USD</option>
+                                        <option value="HKD">HKD</option>
+                                        <option value="SGD">SGD</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="EUR">EUR</option>
+                                    </select>
+                                </label>
+                                <input type="number" id="i-cost" placeholder="請輸入您買入時的平均單一價格 (上方自選幣別)" step="any" required min="0">
+                            </div>
+                            <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #38bdf8, #8b5cf6);">新增至投資組合</button>
+                        </form>
+                    </div>
+                    <div class="card glass list-card">
+                        <h3 style="display:flex; align-items:center;">現有庫存明細 
+                            <div style="position: relative; margin-left: 15px; display:inline-flex; align-items:center;">
+                                <select id="portfolio-currency" style="appearance: none; -webkit-appearance: none; background: transparent; color: #10b981; border: none; font-size: 1.15rem; font-weight: 800; cursor: pointer; outline: none; padding-right: 15px;">
+                                    <option value="TWD" style="color:black;">TWD</option>
+                                    <option value="USD" style="color:black;">USD</option>
+                                    <option value="HKD" style="color:black;">HKD</option>
+                                    <option value="SGD" style="color:black;">SGD</option>
+                                </select>
+                                <i class="fa-solid fa-caret-down" style="color: #10b981; font-size: 0.95rem; position: absolute; right: 0; pointer-events: none;"></i>
+                            </div>
+                            <span id="sync-status" style="margin-left:auto; font-size: 0.85rem; font-weight: 500; color: var(--primary);"><i class="fa-solid fa-rotate"></i> 更新中...</span>
+                        </h3>
+                        <div class="transaction-list" id="invest-list">
+                            <!-- JS 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="liabilities" class="page-section">
+                <header>
+                    <div class="greeting">
+                        <h2>負債追蹤與管理</h2>
+                        <p>集中審視所有貸款餘額與每月固定支出。</p>
+                    </div>
+                </header>
+                <div class="module-container">
+                    <div class="card glass form-card">
+                        <h3>新增負債項目</h3>
+                        <form id="debt-form">
+                            <div class="form-group" style="position: relative;">
+                                <label>往來銀行 (放款單位)</label>
+                                <input type="text" id="d-bank" placeholder="搜尋銀行代碼或名稱 (如: 812 或 台新)" required autocomplete="off">
+                                <ul id="bank-suggestions" class="suggestions-list" style="display:none;"></ul>
+                            </div>
+                            <div class="form-group" style="position: relative;">
+                                <label>還款銀行 (扣款單位)</label>
+                                <input type="text" id="d-repay-bank" placeholder="選擇您的扣款銀行" required autocomplete="off">
+                                <ul id="repay-bank-suggestions" class="suggestions-list" style="display:none;"></ul>
+                            </div>
+                            <div class="form-group">
+                                <label>債務名稱</label>
+                                <input type="text" id="d-name" placeholder="如：個人信貸、房屋貸款" required>
+                            </div>
+                            <div class="form-group">
+                                <label>放款日期 (Origination Date)</label>
+                                <input type="date" id="d-startdate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>原核貸總本金 (NT$)</label>
+                                <input type="number" id="d-total" placeholder="您當初借的總本金" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>貸款年期 (Years)</label>
+                                <input type="number" id="d-years" placeholder="貸款總年數 (如：7)" required min="1" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>每月固定攤還金 (NT$)</label>
+                                <input type="number" id="d-monthly" placeholder="每月固定吃掉的現金流" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>每月固定扣款日 (1~31號)</label>
+                                <input type="number" id="d-paydate" placeholder="如：5號扣款請輸入 5" required min="1" max="31">
+                            </div>
+
+                            <!-- Realtime Interest Rate Extrapolator Display -->
+                            <div class="card glass primary-card" style="margin-top:20px; text-align:center; padding:10px;">
+                                <div style="font-size: 0.85rem; color:var(--text-muted); margin-bottom:5px;">系統換算實質年利率 (APR)</div>
+                                <div id="d-apr-display" style="font-size: 1.5rem; font-weight:800; color:var(--success);">- %</div>
+                            </div>
+                            
+                            <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #f43f5e, #f97316); margin-top:20px;">新增負債紀錄</button>
+                        </form>
+                    </div>
+                    <div class="card glass list-card">
+                        <h3>當前負債列表</h3>
+                        <div class="transaction-list" id="debt-list">
+                            <!-- JS 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 復原操作按鈕 -->
+    <button id="undo-btn" title="發現有誤？點擊復原上一步操作"><i class="fa-solid fa-rotate-left"></i> 復原上一步</button>
+
+    <!-- 交易 Modal (買進/賣出) -->
+    <div id="buy-modal" class="modal-overlay">
+        <div class="card glass modal-card">
+            <h2 id="buy-modal-title">操作交易</h2>
+            <form id="buy-modal-form" style="margin-top:20px;">
+                <div class="form-group">
+                    <label>操作方向</label>
+                    <select id="bm-action">
+                        <option value="buy">加碼買進 (Buy)</option>
+                        <option value="sell">賣出部位 (Sell)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>本次交易總金額 (NT$)</label>
+                    <input type="number" id="bm-cost" placeholder="請輸入本次買賣對應的台幣總額" step="any" required min="0">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>本次購得數量 <br><span style="font-size:0.85rem; color:var(--primary);">*若不知道數量請留白，系統將用即時市價自動推算</span></label>
+                    <input type="number" id="bm-amount" step="any" placeholder="留白則自動推算">
+                </div>
+                <div id="bm-result" style="font-size: 0.9rem; color: var(--success); margin-bottom: 20px; font-weight: 500;"></div>
+                <div style="display:flex; gap:15px; margin-top:10px;">
+                    <button type="button" class="submit-btn" id="bm-cancel" style="background: rgba(255,255,255,0.1); color: var(--text-main);">寫錯了，取消</button>
+                    <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #10b981, #059669);">確認交易送出</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 負債詳細資訊 Modal -->
+    <div id="debt-detail-modal" class="modal-overlay">
+        <div class="card glass modal-card">
+            <h2 id="dd-title" style="margin-bottom: 15px;">負債詳細分析</h2>
+            <div id="dd-content" style="font-size: 1rem; color: var(--text-main); line-height: 1.8;">
+                <!-- JS dynamically populates this inside app.js -->
+            </div>
+            <button type="button" class="submit-btn" id="dd-close" style="margin-top: 20px; background: rgba(255,255,255,0.1); color: var(--text-main);">關閉</button>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js?v=4"></script>
+</body>
+</html>

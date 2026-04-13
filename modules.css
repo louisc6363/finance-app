@@ -1,0 +1,187 @@
+/* Investments & Liabilities Shared Styles */
+.module-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 25px;
+}
+
+@media (max-width: 1024px) {
+    .module-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.asset-item, .debt-item, .tx-card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 12px;
+}
+
+.asset-item:hover, .debt-item:hover, .tx-card-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.5);
+}
+
+.asset-icon, .debt-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.ic-crypto { background: rgba(139, 92, 246, 0.15); color: #a855f7; }
+.ic-stock { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.ic-debt { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+.item-name { font-weight: 700; font-size: 1.15rem; color: var(--text-main); letter-spacing: 0.5px;}
+.item-sub { font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; }
+.item-value { font-weight: 800; font-size: 1.3rem; text-align: right; font-variant-numeric: tabular-nums; }
+.item-price-change { font-size: 0.85rem; margin-top: 6px; text-align: right; font-weight: 600;}
+
+.price-up { color: var(--success); }
+.price-down { color: var(--danger); }
+
+/* Animation for loading icon */
+.spinner {
+    animation: spin 1.2s linear infinite;
+    display: inline-block;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* 行動按鈕 (編輯/刪除) */
+.item-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tx-item:hover .item-actions, .asset-item:hover .item-actions, .debt-item:hover .item-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: var(--text-muted);
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-main);
+}
+
+.del-tx-btn:hover, .del-inv-btn:hover, .del-debt-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+
+@media (max-width: 1024px) {
+    .item-actions {
+        opacity: 1; /* 手機版使用者沒有 hover 行為，因此直接顯示按鈕 */
+    }
+}
+
+/* 加碼買進 Modal 樣式 */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1; pointer-events: auto;
+}
+
+.modal-card { 
+    width: 90%; max-width: 420px; padding: 35px; 
+    transform: translateY(20px); transition: transform 0.3s ease;
+    background: rgba(18, 23, 40, 0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.modal-overlay.show .modal-card {
+    transform: translateY(0);
+}
+
+.modal-card h3 {
+    margin-bottom: 25px; color: var(--text-main); font-size: 1.3rem;
+}
+
+.buy-inv-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+/* Autocomplete 搜尋清單樣式 */
+.suggestions-list {
+    position: absolute; top: calc(100% - 3px); left: 0; width: 100%;
+    background: rgba(18, 23, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px; margin-top: 5px;
+    max-height: 220px; overflow-y: auto;
+    z-index: 2000; list-style: none; padding: 0;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.suggestions-list li {
+    padding: 12px 15px; cursor: pointer; color: var(--text-main);
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+.suggestions-list li:last-child { border-bottom: none; }
+.suggestions-list li:hover { background: rgba(56, 189, 248, 0.15); }
+.suggestions-list li .sym-code { font-weight: bold; color: var(--primary); letter-spacing: 0.5px; }
+
+/* 貴金屬與原物料色系 */
+.asset-icon.ic-commodity {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+/* 復原按鈕樣式 */
+#undo-btn {
+    position: fixed; bottom: 30px; left: 30px;
+    background: linear-gradient(135deg, #ef4444, #b91c1c); color: white;
+    border: none; padding: 12px 25px; border-radius: 50px;
+    box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+    cursor: pointer; z-index: 9999; display: none;
+    font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+#undo-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6); }
+#undo-btn i { margin-right: 5px; }
+
+/* iOS Toggle Switch */
+.pnl-toggle-wrapper { position: absolute; top: 18px; right: 20px; display: flex; align-items: center; gap: 8px; z-index: 10; }
+.pnl-toggle-label { font-size: 0.75rem; color: rgba(255,255,255,0.8); font-weight: 600; letter-spacing:0.5px; }
+.ios-switch { position: relative; display: inline-block; width: 34px; height: 20px; margin-bottom: 0; }
+.ios-switch input { opacity: 0; width: 0; height: 0; }
+.ios-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .3s; border-radius: 20px; }
+.ios-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.ios-switch input:checked + .ios-slider { background-color: #38bdf8; }
+.ios-switch input:checked + .ios-slider:before { transform: translateX(14px); }
