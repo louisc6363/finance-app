@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             link.parentElement.classList.add('active');
             document.getElementById(targetPage).classList.add('active');
-            
+
             if (targetPage === 'dashboard') updateDashboard(true);
             if (targetPage === 'investments') fetchPrices();
         });
@@ -75,30 +75,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const suggestionBox = document.getElementById('symbol-suggestions');
 
     if (iSymbolInput && suggestionBox) {
-        iSymbolInput.setAttribute('autocomplete', 'off'); 
-        
+        iSymbolInput.setAttribute('autocomplete', 'off');
+
         iSymbolInput.addEventListener('input', (e) => {
             let val = e.target.value.toLowerCase().trim();
             let typeEl = document.getElementById('i-type');
-            let type = typeEl ? typeEl.value : 'crypto'; 
-            
+            let type = typeEl ? typeEl.value : 'crypto';
+
             suggestionBox.innerHTML = '';
-            if(!val) { 
-                suggestionBox.style.display = 'none'; 
-                return; 
+            if (!val) {
+                suggestionBox.style.display = 'none';
+                return;
             }
-            
-            let matches = assetDictionary[type].filter(item => 
-                item.sym.toLowerCase().startsWith(val) || 
+
+            let matches = assetDictionary[type].filter(item =>
+                item.sym.toLowerCase().startsWith(val) ||
                 item.name.toLowerCase().includes(val) ||
                 item.name.toLowerCase().startsWith(val)
             );
-            
-            if(matches.length > 0) {
+
+            if (matches.length > 0) {
                 matches.forEach(m => {
                     let li = document.createElement('li');
                     let displaySym = ((type === 'tw_stock' || type === 'commodity') && m.sym.endsWith('.TW')) ? m.sym.replace('.TW', '') : m.sym;
-                    
+
                     li.innerHTML = `<span class="sym-code">${displaySym}</span><span style="font-size:0.85rem; color:var(--text-muted); padding-left:10px; text-align:right;">${m.name}</span>`;
                     li.addEventListener('click', () => {
                         iSymbolInput.value = displaySym;
@@ -106,11 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     suggestionBox.appendChild(li);
                 });
-                
+
                 let customLi = document.createElement('li');
                 customLi.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted); width:100%; text-align:center;">找不到？請直接輸入完整代號 (系統將自動尋找)</span>`;
                 suggestionBox.appendChild(customLi);
-                
+
                 suggestionBox.style.display = 'block';
             } else {
                 suggestionBox.style.display = 'none';
@@ -122,14 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 suggestionBox.style.display = 'none';
             }
         });
-        
+
         const typeEl = document.getElementById('i-type');
         if (typeEl) {
             typeEl.addEventListener('change', () => {
                 iSymbolInput.value = '';
                 suggestionBox.style.display = 'none';
                 iSymbolInput.focus();
-                
+
                 const amountHint = document.getElementById('amount-hint');
                 if (amountHint) {
                     let v = typeEl.value;
@@ -144,48 +144,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 3. 狀態管理與復原機制 (Undo System) ---
-    // 改良版資料讀取：優先讀取 V7，其次 V6，最後 V5
-    let state = JSON.parse(localStorage.getItem('financeStateV7')) || JSON.parse(localStorage.getItem('financeStateV6'));
+    // 改良版資料讀取：全新版本 V8，不繼承舊資料以確保乾淨開發
+    let state = JSON.parse(localStorage.getItem('financeStateV8'));
     if (!state) {
-        let oldState = JSON.parse(localStorage.getItem('financeStateV5'));
-        if (oldState) {
-            state = oldState;
-            state.investments.forEach(inv => {
-                if (inv.type === 'stock') {
-                    inv.type = inv.symbol.endsWith('.TW') ? 'tw_stock' : 'us_stock';
-                }
-            });
-        } else {
-            state = {
-                transactions: [], 
-                investments: [
-                    { id: '1', type: 'crypto', symbol: 'BTC', amount: 0.85, totalCost: 1500000, currentPrice: 2150000 },
-                    { id: '3', type: 'us_stock', symbol: 'AAPL', amount: 45, totalCost: 200000, currentPrice: 5500 }, 
-                    { id: '4', type: 'tw_stock', symbol: '2330.TW', amount: 1000, totalCost: 650000, currentPrice: 780 } 
-                ],
-                debts: [
-                    { id: '5', name: '首購房屋貸款', total: 6800000, monthly: 24000 }
-                ],
-                baseCash: 650000 
-            };
-        }
-        localStorage.setItem('financeStateV7', JSON.stringify(state));
+        state = {
+            transactions: [],
+            investments: [],
+            debts: [],
+            baseCash: 0
+        };
+        localStorage.setItem('financeStateV8', JSON.stringify(state));
     }
 
     let historyStack = [];
 
     const captureHistory = () => {
         historyStack.push(JSON.stringify(state));
-        if (historyStack.length > 20) historyStack.shift(); 
+        if (historyStack.length > 20) historyStack.shift();
         const undoBtn = document.getElementById('undo-btn');
         if (undoBtn) undoBtn.style.display = 'block';
     };
 
     document.getElementById('undo-btn')?.addEventListener('click', () => {
-        if(historyStack.length > 0) {
+        if (historyStack.length > 0) {
             state = JSON.parse(historyStack.pop());
-            saveState(false); 
-            
+            saveState(false);
+
             const undoBtn = document.getElementById('undo-btn');
             if (historyStack.length === 0 && undoBtn) undoBtn.style.display = 'none';
             alert('已為您無痕復原上一個操作！');
@@ -213,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('t-date')) document.getElementById('t-date').value = today;
 
     const saveState = (recordToLocal = true) => {
-        if(recordToLocal) localStorage.setItem('financeStateV7', JSON.stringify(state));
+        if (recordToLocal) localStorage.setItem('financeStateV8', JSON.stringify(state));
         updateDashboard(false);
         renderTransactions();
         renderInvestments();
@@ -225,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime();
 
-        let tIncome = 0, tExpense = 0; 
+        let tIncome = 0, tExpense = 0;
         state.transactions.forEach(t => {
             const txTime = new Date(t.date).getTime();
             if (txTime >= startOfMonth && txTime <= endOfMonth) {
@@ -233,17 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (t.type === 'expense') tExpense += Number(t.amount);
             }
         });
-        
+
         const cashflowSurplus = tIncome - tExpense;
-        
+
         let investTotal = 0;
         const includePnl = document.getElementById('toggle-invest-pnl') ? document.getElementById('toggle-invest-pnl').checked : true;
 
         state.investments.forEach(i => {
-            if(includePnl) {
+            if (includePnl) {
                 investTotal += Number(i.amount) * Number(i.currentPrice);
             } else {
-                investTotal += Number(i.totalCost); 
+                investTotal += Number(i.totalCost);
             }
         });
 
@@ -256,14 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return { tIncome, tExpense, cashflowSurplus, investTotal, currentCash, totalAssets, totalDebts, netWorth };
     };
 
-    const formatCurrency = (num) => 'NT$ ' + num.toLocaleString('en-US', {maximumFractionDigits: 0});
-    
+    const formatCurrency = (num) => 'NT$ ' + num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
     const animateValue = (id, end, duration) => {
         const obj = document.getElementById(id);
         if (!obj) return;
         let start = parseInt(obj.getAttribute('data-current')) || 0;
         if (start === end) { obj.innerHTML = formatCurrency(end); return; }
-        
+
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
@@ -271,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const easeOutProgress = 1 - Math.pow(1 - progress, 3);
             const currentVal = Math.floor(easeOutProgress * (end - start) + start);
             obj.innerHTML = formatCurrency(currentVal);
-            if (progress < 1) { window.requestAnimationFrame(step); } 
+            if (progress < 1) { window.requestAnimationFrame(step); }
             else { obj.setAttribute('data-current', end); }
         };
         window.requestAnimationFrame(step);
@@ -286,12 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
         animateValue('monthly-surplus', data.cashflowSurplus, ms);
         animateValue('total-assets', data.totalAssets, ms);
         animateValue('total-liabilities', data.totalDebts, ms);
-        
+
         if (chartInstances.asset) {
             let cryptoValue = 0; let stockValue = 0;
             state.investments.forEach(i => {
-                if(i.type==='crypto') cryptoValue += (i.amount * i.currentPrice);
-                if(i.type==='tw_stock' || i.type==='us_stock' || i.type==='commodity') stockValue += (i.amount * i.currentPrice);
+                if (i.type === 'crypto') cryptoValue += (i.amount * i.currentPrice);
+                if (i.type === 'tw_stock' || i.type === 'us_stock' || i.type === 'commodity') stockValue += (i.amount * i.currentPrice);
             });
             chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, data.currentCash];
             chartInstances.asset.update();
@@ -305,21 +289,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchPrices = async () => {
-        if(state.investments.length === 0) return;
-        
+        if (state.investments.length === 0) return;
+
         const syncStatus = document.getElementById('sync-status');
-        if(syncStatus) syncStatus.innerHTML = '<i class="fa-solid fa-rotate spinner"></i> 即時 API 報價同步中...';
+        if (syncStatus) syncStatus.innerHTML = '<i class="fa-solid fa-rotate spinner"></i> 即時 API 報價同步中...';
 
         let changed = false;
-        
+
         let twDataCache = null;
         if (state.investments.some(i => i.type === 'tw_stock')) {
             try {
                 let res = await fetch('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL'));
                 if (res.ok) twDataCache = await res.json();
-            } catch(e) { console.log('TWSE API fetch error'); }
+            } catch (e) { console.log('TWSE API fetch error'); }
         }
-        
+
         for (let inv of state.investments) {
             try {
                 if (inv.type === 'crypto') {
@@ -327,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`);
                     if (res.ok) {
                         let json = await res.json();
-                        let updatedPrice = parseFloat(json.price) * 32.5; 
+                        let updatedPrice = parseFloat(json.price) * 32.5;
                         if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) { inv.currentPrice = updatedPrice; changed = true; }
                     }
                 } else if (inv.type === 'tw_stock') {
@@ -336,9 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         let stockInfo = twDataCache.find(s => s.Code === pureSym);
                         if (stockInfo && stockInfo.ClosingPrice) {
                             let updatedPrice = parseFloat(stockInfo.ClosingPrice);
-                            if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) { 
-                                inv.currentPrice = updatedPrice; 
-                                changed = true; 
+                            if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) {
+                                inv.currentPrice = updatedPrice;
+                                changed = true;
                             }
                         }
                     }
@@ -350,25 +334,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         let yahooData = await res.json();
                         if (yahooData.chart && yahooData.chart.result && yahooData.chart.result[0]) {
                             let price = yahooData.chart.result[0].meta.regularMarketPrice;
-                            let currency = yahooData.chart.result[0].meta.currency; 
+                            let currency = yahooData.chart.result[0].meta.currency;
                             let updatedPrice = currency === 'USD' ? (price * 32.5) : price;
                             if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) { inv.currentPrice = updatedPrice; changed = true; }
                         }
                     }
                 }
-            } catch(e) { console.log('Fetch error for', inv.symbol); }
+            } catch (e) { console.log('Fetch error for', inv.symbol); }
         }
-        
-        if(changed) saveState();
-        if(syncStatus) syncStatus.innerHTML = '<i class="fa-solid fa-check circle-check text-success"></i> 最新報價已同步 <span style="font-size:0.8rem; opacity:0.8; margin-left:5px;">(資料來源: TWSE / Binance，僅供參考)</span>';
+
+        if (changed) saveState();
+        if (syncStatus) syncStatus.innerHTML = '<i class="fa-solid fa-check circle-check text-success"></i> 最新報價已同步 <span style="font-size:0.8rem; opacity:0.8; margin-left:5px;">(資料來源: TWSE / Binance，僅供參考)</span>';
     };
 
     const fForm = document.getElementById('transaction-form');
     if (fForm) {
         fForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if(!document.getElementById('t-amount').value) return alert("請輸入金額");
-            
+            if (!document.getElementById('t-amount').value) return alert("請輸入金額");
+
             captureHistory();
 
             const txData = {
@@ -396,21 +380,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (iForm) {
         iForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
             let inputAmount = parseFloat(document.getElementById('i-amount').value);
             let inputAvgCost = parseFloat(document.getElementById('i-cost').value);
-            
-            if(!inputAmount || isNaN(inputAvgCost)) {
+
+            if (!inputAmount || isNaN(inputAvgCost)) {
                 return alert("請填寫數量與平均買入單價！");
             }
-            
+
             let type = document.getElementById('i-type').value;
             let symbol = document.getElementById('i-symbol').value.toUpperCase();
-            
+
             if (type === 'tw_stock' && /^\d{4,5}$/.test(symbol)) {
                 symbol += '.TW';
             }
-            
+
             let calculatedTotalCost = inputAmount * inputAvgCost;
 
             captureHistory();
@@ -420,13 +404,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 symbol: symbol,
                 amount: inputAmount,
                 totalCost: calculatedTotalCost,
-                currentPrice: inputAvgCost 
+                currentPrice: inputAvgCost
             };
 
             if (editingState.invId) {
                 const idx = state.investments.findIndex(i => i.id === editingState.invId);
                 if (idx !== -1) {
-                    invData.currentPrice = state.investments[idx].currentPrice; 
+                    invData.currentPrice = state.investments[idx].currentPrice;
                     state.investments[idx] = { ...state.investments[idx], ...invData };
                 }
                 editingState.invId = null;
@@ -444,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.investments.push(invData);
                 }
             }
-            saveState(); iForm.reset(); fetchPrices(); 
+            saveState(); iForm.reset(); fetchPrices();
         });
     }
 
@@ -452,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dForm) {
         dForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if(!document.getElementById('d-total').value) return;
+            if (!document.getElementById('d-total').value) return;
             captureHistory();
             const debtData = {
                 name: document.getElementById('d-name').value,
@@ -473,15 +457,15 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState(); dForm.reset();
         });
     }
-    
+
     let dcaState = { invId: null, symbol: null };
     const buyModal = document.getElementById('buy-modal');
     const bmForm = document.getElementById('buy-modal-form');
-    
+
     document.getElementById('bm-cancel')?.addEventListener('click', () => {
         buyModal.classList.remove('show');
-        dcaState = {invId: null, symbol: null};
-        if(bmForm) bmForm.reset();
+        dcaState = { invId: null, symbol: null };
+        if (bmForm) bmForm.reset();
         document.getElementById('bm-result').innerHTML = '';
     });
 
@@ -498,43 +482,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!amount) {
                 rmResult.innerHTML = '<i class="fa-solid fa-rotate spinner" style="color:var(--primary);"></i> 正在抓取最新價幫您換算自動給予股數...';
-                let currentTwdPrice = target.currentPrice > 0 ? target.currentPrice : 1; 
+                let currentTwdPrice = target.currentPrice > 0 ? target.currentPrice : 1;
                 try {
                     if (target.type === 'crypto') {
                         let res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${target.symbol}USDT`);
-                        if(res.ok) { let json = await res.json(); currentTwdPrice = parseFloat(json.price) * 32.5; }
+                        if (res.ok) { let json = await res.json(); currentTwdPrice = parseFloat(json.price) * 32.5; }
                     } else if (target.type === 'tw_stock') {
                         let res = await fetch('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL'));
-                        if(res.ok) {
+                        if (res.ok) {
                             let twData = await res.json();
                             let pureSym = target.symbol.replace('.TW', '');
                             let stockInfo = twData.find(s => s.Code === pureSym);
-                            if(stockInfo && stockInfo.ClosingPrice) {
+                            if (stockInfo && stockInfo.ClosingPrice) {
                                 currentTwdPrice = parseFloat(stockInfo.ClosingPrice);
                             }
                         }
                     } else if (target.type === 'us_stock' || target.type === 'commodity') {
                         let tUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${target.symbol}`;
                         let res = await fetch(`https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(tUrl)}`);
-                        if(res.ok) {
+                        if (res.ok) {
                             let yahooData = await res.json();
-                            if(yahooData.chart && yahooData.chart.result){
+                            if (yahooData.chart && yahooData.chart.result) {
                                 let price = yahooData.chart.result[0].meta.regularMarketPrice;
                                 let currency = yahooData.chart.result[0].meta.currency;
                                 currentTwdPrice = currency === 'USD' ? price * 32.5 : price;
                             }
                         }
                     }
-                } catch(e) { console.log(e); }
+                } catch (e) { console.log(e); }
                 amount = cost / currentTwdPrice;
-                amount = parseFloat(amount.toFixed(6)); 
-                target.currentPrice = currentTwdPrice; 
+                amount = parseFloat(amount.toFixed(6));
+                target.currentPrice = currentTwdPrice;
             }
 
             captureHistory();
 
             const action = document.getElementById('bm-action') ? document.getElementById('bm-action').value : 'buy';
-            
+
             if (action === 'buy') {
                 target.totalCost += cost;
                 target.amount += amount;
@@ -570,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 buyModal.classList.add('show');
             }
         }
-        
+
         if (e.target.closest('.edit-tx-btn')) {
             const id = e.target.closest('.edit-tx-btn').getAttribute('data-id');
             const item = state.transactions.find(t => t.id === id);
@@ -582,10 +566,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 editingState.txId = id;
                 const btn = document.querySelector('#transaction-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                document.getElementById('transaction-form').scrollIntoView({behavior: 'smooth'});
+                document.getElementById('transaction-form').scrollIntoView({ behavior: 'smooth' });
             }
         }
-        
+
         if (e.target.closest('.edit-inv-btn')) {
             const id = e.target.closest('.edit-inv-btn').getAttribute('data-id');
             const item = state.investments.find(i => i.id === id);
@@ -599,10 +583,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 editingState.invId = id;
                 const btn = document.querySelector('#invest-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                document.getElementById('invest-form').scrollIntoView({behavior: 'smooth'});
+                document.getElementById('invest-form').scrollIntoView({ behavior: 'smooth' });
             }
         }
-        
+
         if (e.target.closest('.edit-debt-btn')) {
             const id = e.target.closest('.edit-debt-btn').getAttribute('data-id');
             const item = state.debts.find(d => d.id === id);
@@ -613,34 +597,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 editingState.debtId = id;
                 const btn = document.querySelector('#debt-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                document.getElementById('debt-form').scrollIntoView({behavior: 'smooth'});
+                document.getElementById('debt-form').scrollIntoView({ behavior: 'smooth' });
             }
         }
 
         if (e.target.closest('.del-tx-btn')) {
             const id = e.target.closest('.del-tx-btn').getAttribute('data-id');
-            if(confirm('確定刪除此收支紀錄嗎？')) { 
-                captureHistory(); 
-                state.transactions = state.transactions.filter(t => t.id !== id); 
-                saveState(); 
+            if (confirm('確定刪除此收支紀錄嗎？')) {
+                captureHistory();
+                state.transactions = state.transactions.filter(t => t.id !== id);
+                saveState();
             }
         }
-        
+
         if (e.target.closest('.del-inv-btn')) {
             const id = e.target.closest('.del-inv-btn').getAttribute('data-id');
-            if(confirm('確定刪除此投資部位嗎？')) { 
-                captureHistory(); 
-                state.investments = state.investments.filter(t => t.id !== id); 
-                saveState(); 
+            if (confirm('確定刪除此投資部位嗎？')) {
+                captureHistory();
+                state.investments = state.investments.filter(t => t.id !== id);
+                saveState();
             }
         }
-        
+
         if (e.target.closest('.del-debt-btn')) {
             const id = e.target.closest('.del-debt-btn').getAttribute('data-id');
-            if(confirm('確定這筆債務已經還清並刪除嗎？')) { 
-                captureHistory(); 
-                state.debts = state.debts.filter(t => t.id !== id); 
-                saveState(); 
+            if (confirm('確定這筆債務已經還清並刪除嗎？')) {
+                captureHistory();
+                state.debts = state.debts.filter(t => t.id !== id);
+                saveState();
             }
         }
     });
@@ -656,11 +640,11 @@ document.addEventListener('DOMContentLoaded', () => {
             listDiv.innerHTML += `
                 <div class="tx-item">
                     <div class="tx-info">
-                        <div class="tx-icon ${isInc?'ic-inc':'ic-exp'}"><i class="fa-solid ${isInc?'fa-arrow-trend-up':'fa-basket-shopping'}"></i></div>
+                        <div class="tx-icon ${isInc ? 'ic-inc' : 'ic-exp'}"><i class="fa-solid ${isInc ? 'fa-arrow-trend-up' : 'fa-basket-shopping'}"></i></div>
                         <div class="tx-details"><div class="tx-cat">${t.category}</div><div class="tx-date">${t.date}</div></div>
                     </div>
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
-                        <div class="tx-amount ${isInc?'positive':'negative'}">${isInc?'+':'-'} NT$ ${Number(t.amount).toLocaleString()}</div>
+                        <div class="tx-amount ${isInc ? 'positive' : 'negative'}">${isInc ? '+' : '-'} NT$ ${Number(t.amount).toLocaleString()}</div>
                         <div class="item-actions">
                             <button class="action-btn edit-tx-btn" data-id="${t.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
                             <button class="action-btn del-tx-btn" data-id="${t.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
@@ -680,19 +664,19 @@ document.addEventListener('DOMContentLoaded', () => {
             let iconClass = 'ic-stock';
             if (i.type === 'crypto') iconClass = 'ic-crypto';
             if (i.type === 'commodity') iconClass = 'ic-commodity';
-            
+
             let iconCode = 'fa-chart-line';
-            if(i.type === 'crypto') iconCode = 'fa-bitcoin';
-            if(i.type === 'tw_stock' || i.type === 'us_stock') iconCode = 'fa-building';
-            if(i.type === 'commodity') iconCode = 'fa-coins';
-            
+            if (i.type === 'crypto') iconCode = 'fa-bitcoin';
+            if (i.type === 'tw_stock' || i.type === 'us_stock') iconCode = 'fa-building';
+            if (i.type === 'commodity') iconCode = 'fa-coins';
+
             let val = Number(i.amount) * Number(i.currentPrice);
-            let cost = Number(i.totalCost) || val; 
+            let cost = Number(i.totalCost) || val;
             let pnl = val - cost;
             let pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
             let pnlClass = pnl >= 0 ? 'price-up' : 'price-down';
             let pnlSign = pnl >= 0 ? '+' : '';
-            
+
             listDiv.innerHTML += `
                 <div class="asset-item">
                     <div class="tx-info">
@@ -752,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctxAsset) {
             chartInstances.asset = new Chart(ctxAsset.getContext('2d'), {
                 type: 'doughnut',
-                data: { labels: ['加密貨幣', '股票', '現金存款'], datasets: [{ data: [1,1,1], backgroundColor: ['#a855f7', '#3b82f6', '#10b981'], borderWidth: 0, hoverOffset: 8 }] },
+                data: { labels: ['加密貨幣', '股票', '現金存款'], datasets: [{ data: [1, 1, 1], backgroundColor: ['#a855f7', '#3b82f6', '#10b981'], borderWidth: 0, hoverOffset: 8 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }, cutout: '78%' }
             });
         }
@@ -760,12 +744,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctxCashflow = document.getElementById('cashflowChart');
         if (ctxCashflow) {
             const rCtx = ctxCashflow.getContext('2d');
-            const gInc = rCtx.createLinearGradient(0,0,0,250); gInc.addColorStop(0, 'rgba(16, 185, 129, 0.9)'); gInc.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
-            const gExp = rCtx.createLinearGradient(0,0,0,250); gExp.addColorStop(0, 'rgba(239, 68, 68, 0.9)'); gExp.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
-            
+            const gInc = rCtx.createLinearGradient(0, 0, 0, 250); gInc.addColorStop(0, 'rgba(16, 185, 129, 0.9)'); gInc.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+            const gExp = rCtx.createLinearGradient(0, 0, 0, 250); gExp.addColorStop(0, 'rgba(239, 68, 68, 0.9)'); gExp.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
+
             chartInstances.cashflow = new Chart(rCtx, {
                 type: 'bar',
-                data: { labels: ['11月','12月','1月','2月','3月','4月（本月）'], datasets: [{ label: '總收入', data: [82000, 82000, 150000, 85000, 85000, 0], backgroundColor: gInc, borderRadius: 8 }, { label: '總支出', data: [38000, 45000, 52000, 39000, 41000, 0], backgroundColor: gExp, borderRadius: 8 }] },
+                data: { labels: ['11月', '12月', '1月', '2月', '3月', '4月（本月）'], datasets: [{ label: '總收入', data: [0, 0, 0, 0, 0, 0], backgroundColor: gInc, borderRadius: 8 }, { label: '總支出', data: [0, 0, 0, 0, 0, 0], backgroundColor: gExp, borderRadius: 8 }] },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false } }, x: { grid: { display: false, drawBorder: false } } }, plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true } } } }
             });
         }
@@ -776,5 +760,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTransactions();
     renderInvestments();
     renderDebts();
-    fetchPrices(); 
+    fetchPrices();
 });
