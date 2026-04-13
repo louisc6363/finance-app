@@ -481,9 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let calculatedTotalCost = inputAmount * inputAvgCost;
 
-            // [新增] 同步能力檢查：驗證代號是否在我們的報價字典中
+            // [修正] 字典屬性應為 .sym 而非 .symbol
             const supportedItems = assetDictionary[type] || [];
-            const isSupported = supportedItems.some(item => item.symbol.toUpperCase() === symbol);
+            const isSupported = supportedItems.some(item => item.sym && item.sym.toUpperCase() === symbol);
             
             if (!isSupported) {
                 const proceed = confirm(`⚠️ 注意：代號 [ ${symbol} ] 未在系統同步清單中。\n\n這代表我們無法為您自動更新市價與計算損益。您仍要「硬執行」建立此部位嗎？\n\n(點擊取消可回頭修正，點擊確定則建立離線部位)`);
