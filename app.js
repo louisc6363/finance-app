@@ -501,14 +501,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const submitBtn = document.querySelector('#invest-form .submit-btn');
                 submitBtn.innerHTML = '新增至投資組合'; submitBtn.style.background = 'linear-gradient(135deg, #38bdf8, #8b5cf6)';
             } else {
-                let existingIdx = state.investments.findIndex(i => i.symbol === symbol && i.type === type);
+                let invId = Date.now().toString();
                 if (existingIdx !== -1) {
                     state.investments[existingIdx].amount += invData.amount;
                     state.investments[existingIdx].totalCost += invData.totalCost;
                     state.investments[existingIdx].currentPrice = (state.investments[existingIdx].totalCost / state.investments[existingIdx].amount);
+                    invId = state.investments[existingIdx].id; // 取得原有的 ID
                     alert(`聰明合併：發現您已有 [ ${symbol} ]。系統已主動為您合併入現有庫存並重新計算均價！`);
                 } else {
-                    invData.id = Date.now().toString();
+                    invData.id = invId;
                     state.investments.push(invData);
                 }
                 
@@ -519,7 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     amount: calculatedTotalCost,
                     category: '[系統] 投資買入',
                     date: today,
-                    relatedAsset: symbol
+                    relatedAsset: symbol,
+                    linkId: invId // [精準連動] 綁定此部位專屬 ID
                 });
             }
             saveState(); iForm.reset(); fetchPrices();
@@ -624,7 +626,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     amount: cost,
                     category: '[系統] 投資買入',
                     date: today,
-                    relatedAsset: target.symbol
+                    relatedAsset: target.symbol,
+                    linkId: target.id // [精準連動]
                 });
                 alert(`買進成功！我們已自動為您記錄一筆現金流支出。`);
             } else if (action === 'sell') {
@@ -646,7 +649,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     amount: cost,
                     category: '[系統] 投資賣出',
                     date: today,
-                    relatedAsset: target.symbol
+                    relatedAsset: target.symbol,
+                    linkId: target.id // [精準連動]
                 });
                 alert(`賣出成功！變現資金已轉回現金水位。`);
             }
@@ -738,9 +742,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (e.target.closest('.del-inv-btn')) {
             const id = e.target.closest('.del-inv-btn').getAttribute('data-id');
-            if (confirm('確定刪除此投資部位嗎？')) {
+            const targetInv = state.investments.find(i => i.id === id);
+            if (!targetInv) return;
+
+            if (confirm(`確定要刪除 [ ${targetInv.symbol} ] 嗎？\n\n這將會同步撤銷與此特定部位相關的所有自動交易紀錄 (例如買入支出)，以確保您的現金水位正確回歸。`)) {
                 captureHistory();
-                state.investments = state.investments.filter(t => t.id !== id);
+                // 1. 移除投資部位
+                state.investments = state.investments.filter(i => i.id !== id);
+                // 2. 精準連動撤銷：僅刪除 linkId 匹配的自動交易
+                state.transactions = state.transactions.filter(t => t.linkId !== id);
                 saveState();
             }
         }
