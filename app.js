@@ -659,12 +659,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.buy-inv-btn')) {
-            const id = e.target.closest('.buy-inv-btn').getAttribute('data-id');
+        if (e.target.closest('.inv-buy-btn')) {
+            const id = e.target.closest('.inv-buy-btn').getAttribute('data-id');
             const item = state.investments.find(i => i.id === id);
             if (item) {
                 dcaState = { invId: id, symbol: item.symbol };
-                document.getElementById('buy-modal-title').innerText = `針對 ${item.symbol} 操作 (買進/賣出)`;
+                document.getElementById('buy-modal-title').innerText = `${item.symbol} - 買進操作`;
+                document.getElementById('bm-action').value = 'buy'; // 強制設為買進
+                buyModal.classList.add('show');
+            }
+        }
+
+        if (e.target.closest('.inv-sell-btn')) {
+            const id = e.target.closest('.inv-sell-btn').getAttribute('data-id');
+            const item = state.investments.find(i => i.id === id);
+            if (item) {
+                dcaState = { invId: id, symbol: item.symbol };
+                document.getElementById('buy-modal-title').innerText = `${item.symbol} - 賣出操作`;
+                document.getElementById('bm-action').value = 'sell'; // 強制設為賣出
                 buyModal.classList.add('show');
             }
         }
@@ -820,17 +832,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
                         </div>
                     </div>
-                    <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
-                        <div style="text-align: right;">
+                    <div class="tx-right-panel" style="display:flex; align-items:center; gap: 10px;">
+                        <div style="text-align: right; min-width: 100px;">
                             <div class="item-value text-main">${formatVal(val)}</div>
                             <div class="item-price-change ${pnlClass}">
                                 ${pnlSign} ${formatVal(Math.abs(pnl))} (${pnlSign}${pnlPercent.toFixed(2)}%)
                             </div>
                         </div>
-                        <div class="item-actions">
-                            <button class="action-btn buy-inv-btn" data-id="${i.id}" title="定期定額 / 加碼追加部位"><i class="fa-solid fa-plus" style="pointer-events: none;"></i></button>
-                            <button class="action-btn edit-inv-btn" data-id="${i.id}" title="整體手動編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
-                            <button class="action-btn del-inv-btn" data-id="${i.id}" title="清空此部位"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                        <div class="item-actions" style="gap: 5px;">
+                            <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="color: #10b981; border-color: rgba(16, 185, 129, 0.2);"><i class="fa-solid fa-circle-plus"></i> 買</button>
+                            <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);"><i class="fa-solid fa-circle-minus"></i> 賣</button>
+                            <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
+                            <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>`;
