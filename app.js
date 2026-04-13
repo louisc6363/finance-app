@@ -22,31 +22,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. 智能提示詞庫 (Autocomplete Dictionary) ---
     const assetDictionary = {
         crypto: [
-            { sym: 'BTC', name: 'Bitcoin (比特幣)' },
-            { sym: 'ETH', name: 'Ethereum (以太幣)' },
-            { sym: 'BNB', name: 'Binance Coin' },
-            { sym: 'SOL', name: 'Solana (索拉納)' },
-            { sym: 'XRP', name: 'Ripple (瑞波幣)' },
-            { sym: 'DOGE', name: 'Dogecoin (狗狗幣)' },
-            { sym: 'ADA', name: 'Cardano (艾達幣)' },
-            { sym: 'AVAX', name: 'Avalanche' },
-            { sym: 'DOT', name: 'Polkadot (波卡)' },
-            { sym: 'TRX', name: 'TRON (波場)' },
-            { sym: 'LINK', name: 'Chainlink' },
-            { sym: 'MATIC', name: 'Polygon' }
+            { sym: 'BTC', name: 'Bitcoin 比特幣' },
+            { sym: 'ETH', name: 'Ethereum 以太幣' },
+            { sym: 'BNB', name: 'Binance Coin 幣安幣' },
+            { sym: 'SOL', name: 'Solana 索拉納' },
+            { sym: 'XRP', name: 'Ripple 瑞波幣' },
+            { sym: 'DOGE', name: 'Dogecoin 狗狗幣' },
+            { sym: 'ADA', name: 'Cardano 艾達幣' },
+            { sym: 'AVAX', name: 'Avalanche 雪崩幣' },
+            { sym: 'DOT', name: 'Polkadot 波卡' },
+            { sym: 'TRX', name: 'TRON 波場' },
+            { sym: 'LINK', name: 'Chainlink 鏈結幣' },
+            { sym: 'MATIC', name: 'Polygon 馬蹄幣' },
+            { sym: 'LTC', name: 'Litecoin 萊特幣' },
+            { sym: 'SHIB', name: 'Shiba Inu 柴犬幣' },
+            { sym: 'DAI', name: 'DAI 穩定幣' },
+            { sym: 'BCH', name: 'Bitcoin Cash 比特幣現金' },
+            { sym: 'UNI', name: 'Uniswap' },
+            { sym: 'ARB', name: 'Arbitrum' },
+            { sym: 'NEAR', name: 'Near Protocol' },
+            { sym: 'APT', name: 'Aptos' },
+            { sym: 'OP', name: 'Optimism' },
+            { sym: 'PEPE', name: 'Pepe' },
+            { sym: 'SUI', name: 'Sui' },
+            { sym: 'SEI', name: 'Sei' },
+            { sym: 'FIL', name: 'Filecoin 檔案幣' },
+            { sym: 'ATOM', name: 'Cosmos' },
+            { sym: 'ETC', name: '以太坊經典' },
+            { sym: 'FTM', name: 'Fantom' },
+            { sym: 'IMX', name: 'Immutable' },
+            { sym: 'TIA', name: 'Celestia' },
+            { sym: 'INJ', name: 'Injective' },
+            { sym: 'RNDR', name: 'Render' },
+            { sym: 'KAS', name: 'Kaspa' },
+            { sym: 'STX', name: 'Stacks' },
+            { sym: 'TON', name: 'Toncoin' }
         ],
         tw_stock: [
             { sym: '2330.TW', name: '台積電 (TSMC)' },
             { sym: '2317.TW', name: '鴻海' },
             { sym: '2454.TW', name: '聯發科' },
+            { sym: '2308.TW', name: '台達電' },
+            { sym: '2382.TW', name: '廣達' },
+            { sym: '3231.TW', name: '緯創' },
+            { sym: '2301.TW', name: '光寶科' },
             { sym: '0050.TW', name: '元大台灣50' },
             { sym: '0056.TW', name: '元大高股息' },
             { sym: '00878.TW', name: '國泰永續高股息' },
+            { sym: '00919.TW', name: '群益台灣精選高息' },
             { sym: '00929.TW', name: '復華台灣科技優息' },
-            { sym: '2308.TW', name: '台達電' },
+            { sym: '00940.TW', name: '元大台灣價值高息' },
             { sym: '2881.TW', name: '富邦金' },
             { sym: '2882.TW', name: '國泰金' },
-            { sym: '2603.TW', name: '長榮' }
+            { sym: '2886.TW', name: '兆豐金' },
+            { sym: '2884.TW', name: '玉山金' },
+            { sym: '5880.TW', name: '合庫金' },
+            { sym: '2891.TW', name: '中信金' },
+            { sym: '2603.TW', name: '長榮' },
+            { sym: '2609.TW', name: '陽明' }
         ],
         us_stock: [
             { sym: 'AAPL', name: 'Apple 蘋果' },
@@ -57,9 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
             { sym: 'AMZN', name: 'Amazon 亞馬遜' },
             { sym: 'META', name: 'Meta (Facebook)' },
             { sym: 'AMD', name: 'AMD 超微' },
+            { sym: 'TSM', name: '台積電 ADR' },
+            { sym: 'ASML', name: '艾司摩爾' },
+            { sym: 'ARM', name: 'ARM Holdings' },
+            { sym: 'AVGO', name: 'Broadcom 博通' },
+            { sym: 'NFLX', name: 'Netflix 網飛' },
+            { sym: 'DIS', name: 'Disney 迪士尼' },
+            { sym: 'COIN', name: 'Coinbase' },
+            { sym: 'MSTR', name: 'MicroStrategy' },
             { sym: 'SPY', name: 'SPDR S&P 500 ETF' },
             { sym: 'QQQ', name: 'Invesco QQQ ETF' },
-            { sym: 'VOO', name: 'Vanguard S&P 500 ETF' }
+            { sym: 'VOO', name: 'Vanguard S&P 500 ETF' },
+            { sym: 'IBIT', name: 'iShares Bitcoin Trust' }
         ],
         commodity: [
             { sym: 'GC=F', name: '黃金期貨 (Gold)' },
@@ -89,10 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let matches = assetDictionary[type].filter(item =>
-                item.sym.toLowerCase().startsWith(val) ||
-                item.name.toLowerCase().includes(val) ||
-                item.name.toLowerCase().startsWith(val)
-            );
+                item.sym.toLowerCase().includes(val) ||
+                item.name.toLowerCase().includes(val)
+            ).sort((a, b) => {
+                // 優先排序：開頭完全符合 > 包含在內
+                let aStart = a.sym.toLowerCase().startsWith(val) || a.name.toLowerCase().startsWith(val) ? 0 : 1;
+                let bStart = b.sym.toLowerCase().startsWith(val) || b.name.toLowerCase().startsWith(val) ? 0 : 1;
+                return aStart - bStart;
+            }).slice(0, 10); // 最多顯示前 10 個結果避免太亂
 
             if (matches.length > 0) {
                 matches.forEach(m => {
