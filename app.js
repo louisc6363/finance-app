@@ -215,6 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- 摺疊狀態管理 ---
+    const collapsedCategories = new Set(['crypto', 'tw_stock', 'us_stock', 'bonds', 'commodity']);
+
 
     // --- 3. 狀態管理與復原機制 (Undo System) ---
     // 改良版資料讀取：全新版本 V9，徹底清除舊資料與假資料殘留
@@ -857,18 +860,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const groupSection = document.createElement('div');
             groupSection.className = 'asset-group';
             
+            const isCollapsed = collapsedCategories.has(cat.type);
+            
             // 建立分類標頭 (毛玻璃感)
             groupSection.innerHTML = `
-                <div class="asset-group-header">
+                <div class="asset-group-header" data-type="${cat.type}">
                     <div class="group-title" style="color: ${cat.color};">
+                        <i class="fa-solid fa-chevron-down toggle-icon ${isCollapsed ? 'collapsed' : ''}"></i>
                         <i class="fa-solid ${cat.icon}"></i>
                         <span>${cat.label}</span>
                     </div>
                     <div class="group-total">小計: ${displayCurrency} ${formatVal(groupTotalVal)}</div>
                 </div>
-                <div class="asset-group-content" id="group-content-${cat.type}"></div>
+                <div class="asset-group-content ${isCollapsed ? 'collapsed' : ''}" id="group-content-${cat.type}"></div>
             `;
             listDiv.appendChild(groupSection);
+
+            // 加入點擊摺疊事件
+            groupSection.querySelector('.asset-group-header').addEventListener('click', () => {
+                if (collapsedCategories.has(cat.type)) {
+                    collapsedCategories.delete(cat.type);
+                } else {
+                    collapsedCategories.add(cat.type);
+                }
+                renderInvestments();
+            });
 
             const contentDiv = document.getElementById(`group-content-${cat.type}`);
 
