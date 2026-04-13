@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 3. 狀態管理與復原機制 (Undo System) ---
-    // 改良版資料讀取：全新版本 V8，不繼承舊資料以確保乾淨開發
-    let state = JSON.parse(localStorage.getItem('financeStateV8'));
+    // 改良版資料讀取：全新版本 V9，徹底清除舊資料與假資料殘留
+    let state = JSON.parse(localStorage.getItem('financeStateV9'));
     if (!state) {
         state = {
             transactions: [],
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             debts: [],
             baseCash: 0
         };
-        localStorage.setItem('financeStateV8', JSON.stringify(state));
+        localStorage.setItem('financeStateV9', JSON.stringify(state));
     }
 
     let historyStack = [];
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('t-date')) document.getElementById('t-date').value = today;
 
     const saveState = (recordToLocal = true) => {
-        if (recordToLocal) localStorage.setItem('financeStateV8', JSON.stringify(state));
+        if (recordToLocal) localStorage.setItem('financeStateV9', JSON.stringify(state));
         updateDashboard(false);
         renderTransactions();
         renderInvestments();
