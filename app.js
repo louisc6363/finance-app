@@ -833,53 +833,85 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        state.investments.forEach(i => {
-            let iconClass = 'ic-stock';
-            let iconCode = 'fa-chart-line';
-            if (i.type === 'crypto') {
-                iconClass = 'ic-crypto';
-                iconCode = 'fa-bitcoin-sign';
-            } else if (i.type === 'bonds') {
-                iconClass = 'ic-debt';
-                iconCode = 'fa-file-contract';
-            } else if (i.type === 'commodity') {
-                iconClass = 'ic-commodity';
-                iconCode = 'fa-coins';
-            } else {
-                iconCode = 'fa-arrow-trend-up';
-            }
+        // 1. 定義分類順序與語系標籤
+        const categoryConfig = [
+            { type: 'crypto', label: '加密貨幣 (Crypto)', icon: 'fa-bitcoin-sign', color: '#a855f7' },
+            { type: 'tw_stock', label: '台灣股市 (TW Stock)', icon: 'fa-chart-line', color: '#3b82f6' },
+            { type: 'us_stock', label: '美國股市 (US Stock)', icon: 'fa-flag-usa', color: '#10b981' },
+            { type: 'bonds', label: '債券與 ETF (Bonds)', icon: 'fa-file-contract', color: '#f59e0b' },
+            { type: 'commodity', label: '匯率與貴金屬 (FX & Commodity)', icon: 'fa-coins', color: '#eab308' }
+        ];
 
-            let val = Number(i.amount) * Number(i.currentPrice);
-            let cost = Number(i.totalCost) || val;
-            let pnl = val - cost;
-            let pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
-            let pnlClass = pnl >= 0 ? 'price-up' : 'price-down';
-            let pnlSign = pnl >= 0 ? '+' : '';
+        // 2. 進行分組資料處理
+        categoryConfig.forEach(cat => {
+            const filtered = state.investments.filter(i => i.type === cat.type);
+            if (filtered.length === 0) return;
 
-            listDiv.innerHTML += `
-                <div class="asset-item">
-                    <div class="tx-info">
-                        <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
-                        <div class="tx-details">
-                            <div class="item-name">${i.symbol}</div>
-                            <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
-                        </div>
+            // 計算分類小計
+            let groupTotalVal = 0;
+            filtered.forEach(i => {
+                groupTotalVal += (Number(i.amount) * Number(i.currentPrice));
+            });
+
+            // 建立分類容器
+            const groupSection = document.createElement('div');
+            groupSection.className = 'asset-group';
+            
+            // 建立分類標頭 (毛玻璃感)
+            groupSection.innerHTML = `
+                <div class="asset-group-header">
+                    <div class="group-title" style="color: ${cat.color};">
+                        <i class="fa-solid ${cat.icon}"></i>
+                        <span>${cat.label}</span>
                     </div>
-                    <div class="tx-right-panel" style="display:flex; align-items:center; gap: 10px;">
-                        <div style="text-align: right; min-width: 100px;">
-                            <div class="item-value text-main">${formatVal(val)}</div>
-                            <div class="item-price-change ${pnlClass}">
-                                ${pnlSign} ${formatVal(Math.abs(pnl))} (${pnlSign}${pnlPercent.toFixed(2)}%)
+                    <div class="group-total">小計: ${displayCurrency} ${formatVal(groupTotalVal)}</div>
+                </div>
+                <div class="asset-group-content" id="group-content-${cat.type}"></div>
+            `;
+            listDiv.appendChild(groupSection);
+
+            const contentDiv = document.getElementById(`group-content-${cat.type}`);
+
+            // 3. 渲染該類別細項
+            filtered.forEach(i => {
+                let iconClass = 'ic-stock';
+                let iconCode = 'fa-chart-line';
+                if (i.type === 'crypto') { iconClass = 'ic-crypto'; iconCode = 'fa-bitcoin-sign'; }
+                else if (i.type === 'bonds') { iconClass = 'ic-debt'; iconCode = 'fa-file-contract'; }
+                else if (i.type === 'commodity') { iconClass = 'ic-commodity'; iconCode = 'fa-coins'; }
+                
+                let val = Number(i.amount) * Number(i.currentPrice);
+                let cost = Number(i.totalCost) || val;
+                let pnl = val - cost;
+                let pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+                let pnlClass = pnl >= 0 ? 'price-up' : 'price-down';
+                let pnlSign = pnl >= 0 ? '+' : '';
+
+                contentDiv.innerHTML += `
+                    <div class="asset-item">
+                        <div class="tx-info">
+                            <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
+                            <div class="tx-details">
+                                <div class="item-name">${i.symbol}</div>
+                                <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
                             </div>
                         </div>
-                        <div class="item-actions" style="gap: 5px;">
-                            <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">買</button>
-                            <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">賣</button>
-                            <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
-                            <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
+                        <div class="tx-right-panel" style="display:flex; align-items:center; gap: 10px;">
+                            <div style="text-align: right; min-width: 100px;">
+                                <div class="item-value text-main">${formatVal(val)}</div>
+                                <div class="item-price-change ${pnlClass}">
+                                    ${pnlSign} ${formatVal(Math.abs(pnl))} (${pnlSign}${pnlPercent.toFixed(2)}%)
+                                </div>
+                            </div>
+                            <div class="item-actions" style="gap: 5px;">
+                                <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">買</button>
+                                <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">賣</button>
+                                <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
+                                <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
+                            </div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
+            });
         });
     };
 
