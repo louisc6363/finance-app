@@ -64,22 +64,33 @@ document.addEventListener('DOMContentLoaded', () => {
             { sym: '2454.TW', name: '聯發科' },
             { sym: '2308.TW', name: '台達電' },
             { sym: '2382.TW', name: '廣達' },
-            { sym: '3231.TW', name: '緯創' },
-            { sym: '2301.TW', name: '光寶科' },
+            { sym: '3711.TW', name: '日月光投控' },
+            { sym: '2303.TW', name: '聯電' },
+            { sym: '2383.TW', name: '台光電' },
+            { sym: '2412.TW', name: '中華電' },
+            { sym: '2881.TW', name: '富邦金' },
+            { sym: '2882.TW', name: '國泰金' },
+            { sym: '2886.TW', name: '兆豐金' },
+            { sym: '2884.TW', name: '玉山金' },
+            { sym: '2891.TW', name: '中信金' },
+            { sym: '5880.TW', name: '合庫金' },
+            { sym: '2603.TW', name: '長榮' },
+            { sym: '2609.TW', name: '陽明' },
+            { sym: '3017.TW', name: '奇鋐' },
+            { sym: '3037.TW', name: '欣興' },
+            { sym: '2360.TW', name: '致茂' },
+            { sym: '6669.TW', name: '緯穎' },
             { sym: '0050.TW', name: '元大台灣50' },
+            { sym: '006208.TW', name: '富邦台50' },
             { sym: '0056.TW', name: '元大高股息' },
             { sym: '00878.TW', name: '國泰永續高股息' },
             { sym: '00919.TW', name: '群益台灣精選高息' },
             { sym: '00929.TW', name: '復華台灣科技優息' },
             { sym: '00940.TW', name: '元大台灣價值高息' },
-            { sym: '2881.TW', name: '富邦金' },
-            { sym: '2882.TW', name: '國泰金' },
-            { sym: '2886.TW', name: '兆豐金' },
-            { sym: '2884.TW', name: '玉山金' },
-            { sym: '5880.TW', name: '合庫金' },
-            { sym: '2891.TW', name: '中信金' },
-            { sym: '2603.TW', name: '長榮' },
-            { sym: '2609.TW', name: '陽明' }
+            { sym: '00713.TW', name: '元大台灣高息低波' },
+            { sym: '00939.TW', name: '統一台灣高息動能' },
+            { sym: '00881.TW', name: '國泰台灣5G+' },
+            { sym: '00935.TW', name: '野村臺灣創新科技' }
         ],
         us_stock: [
             { sym: 'AAPL', name: 'Apple 蘋果' },
@@ -92,16 +103,27 @@ document.addEventListener('DOMContentLoaded', () => {
             { sym: 'AMD', name: 'AMD 超微' },
             { sym: 'TSM', name: '台積電 ADR' },
             { sym: 'ASML', name: '艾司摩爾' },
-            { sym: 'ARM', name: 'ARM Holdings' },
             { sym: 'AVGO', name: 'Broadcom 博通' },
             { sym: 'NFLX', name: 'Netflix 網飛' },
-            { sym: 'DIS', name: 'Disney 迪士尼' },
             { sym: 'COIN', name: 'Coinbase' },
             { sym: 'MSTR', name: 'MicroStrategy' },
             { sym: 'SPY', name: 'SPDR S&P 500 ETF' },
             { sym: 'QQQ', name: 'Invesco QQQ ETF' },
             { sym: 'VOO', name: 'Vanguard S&P 500 ETF' },
+            { sym: 'BITO', name: 'ProShares 比特幣策略 ETF' },
             { sym: 'IBIT', name: 'iShares Bitcoin Trust' }
+        ],
+        bonds: [
+            { sym: '00679B.TW', name: '元大美債20年' },
+            { sym: '00687B.TW', name: '國泰20年美債' },
+            { sym: '00720B.TW', name: '元大投資級公司債' },
+            { sym: '00751B.TW', name: '元大AAA至A公司債' },
+            { sym: '00772B.TW', name: '中信高評級公司債' },
+            { sym: '00725B.TW', name: '國泰投資級公司債' },
+            { sym: '00740B.TW', name: '富邦全球投等債' },
+            { sym: 'TLT', name: 'iShares 20年期以上美國公債 ETF' },
+            { sym: 'BND', name: 'Vanguard 總體債券市場 ETF' },
+            { sym: 'AGG', name: 'iShares 核心美國綜合債券 ETF' }
         ],
         commodity: [
             { sym: 'GC=F', name: '黃金期貨 (Gold)' },
@@ -182,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (v === 'crypto') amountHint.innerText = '(例如: 0.05 顆)';
                     else if (v === 'tw_stock') amountHint.innerText = '(台股 1張請填 1000 股)';
                     else if (v === 'us_stock') amountHint.innerText = '(輸入實際股數)';
+                    else if (v === 'bonds') amountHint.innerText = '(債券 ETF 1張請填 1000 股)';
                     else if (v === 'commodity') amountHint.innerText = '(輸入單位或合約數量)';
                 }
             });
@@ -318,12 +341,13 @@ document.addEventListener('DOMContentLoaded', () => {
         animateValue('total-liabilities', data.totalDebts, ms);
 
         if (chartInstances.asset) {
-            let cryptoValue = 0; let stockValue = 0;
+            let cryptoValue = 0; let stockValue = 0; let bondValue = 0;
             state.investments.forEach(i => {
                 if (i.type === 'crypto') cryptoValue += (i.amount * i.currentPrice);
-                if (i.type === 'tw_stock' || i.type === 'us_stock' || i.type === 'commodity') stockValue += (i.amount * i.currentPrice);
+                else if (i.type === 'bonds') bondValue += (i.amount * i.currentPrice);
+                else stockValue += (i.amount * i.currentPrice);
             });
-            chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, data.currentCash];
+            chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, bondValue, data.currentCash];
             chartInstances.asset.update();
         }
 
@@ -372,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     }
-                } else if (inv.type === 'us_stock' || inv.type === 'commodity') {
+                } else if (inv.type === 'us_stock' || inv.type === 'commodity' || inv.type === 'bonds') {
                     let tUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(inv.symbol)}`;
                     let proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(tUrl)}`;
                     let res = await fetch(proxyUrl);
@@ -437,8 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let type = document.getElementById('i-type').value;
             let symbol = document.getElementById('i-symbol').value.toUpperCase();
 
-            if (type === 'tw_stock' && /^\d{4,5}$/.test(symbol)) {
-                symbol += '.TW';
+            if ((type === 'tw_stock' || type === 'bonds') && /^\d{4,5}[B]?$/.test(symbol)) {
+                if (!symbol.endsWith('.TW')) symbol += '.TW';
             }
 
             let calculatedTotalCost = inputAmount * inputAvgCost;
@@ -712,9 +736,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (i.type === 'commodity') iconClass = 'ic-commodity';
 
             let iconCode = 'fa-chart-line';
-            if (i.type === 'crypto') iconCode = 'fa-bitcoin';
-            if (i.type === 'tw_stock' || i.type === 'us_stock') iconCode = 'fa-building';
-            if (i.type === 'commodity') iconCode = 'fa-coins';
+            if (i.type === 'crypto') {
+                iconClass = 'ic-crypto';
+                iconCode = 'fa-bitcoin-sign';
+            } else if (i.type === 'bonds') {
+                iconClass = 'ic-debt';
+                iconCode = 'fa-file-contract';
+            } else if (i.type === 'commodity') {
+                iconClass = 'ic-commodity';
+                iconCode = 'fa-coins';
+            } else {
+                iconCode = 'fa-arrow-trend-up';
+            }
 
             let val = Number(i.amount) * Number(i.currentPrice);
             let cost = Number(i.totalCost) || val;
@@ -726,10 +759,10 @@ document.addEventListener('DOMContentLoaded', () => {
             listDiv.innerHTML += `
                 <div class="asset-item">
                     <div class="tx-info">
-                        <div class="asset-icon ${iconClass}"><i class="fa-brands ${iconCode}"></i></div>
+                        <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
                         <div class="tx-details">
                             <div class="item-name">${i.symbol}</div>
-                            <div class="item-sub">數量: ${i.amount} | 總投資成本: $${Math.floor(cost).toLocaleString()}</div>
+                            <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 總投資成本: $${Math.floor(cost).toLocaleString()}</div>
                         </div>
                     </div>
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
@@ -782,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctxAsset) {
             chartInstances.asset = new Chart(ctxAsset.getContext('2d'), {
                 type: 'doughnut',
-                data: { labels: ['加密貨幣', '股票', '現金存款'], datasets: [{ data: [1, 1, 1], backgroundColor: ['#a855f7', '#3b82f6', '#10b981'], borderWidth: 0, hoverOffset: 8 }] },
+                data: { labels: ['加密貨幣', '股票', '債券', '現金存款'], datasets: [{ data: [1, 1, 1, 1], backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#10b981'], borderWidth: 0, hoverOffset: 8 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }, cutout: '78%' }
             });
         }
