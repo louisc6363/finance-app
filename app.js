@@ -209,6 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        document.getElementById('portfolio-currency')?.addEventListener('change', () => {
+            renderInvestments();
+        });
     }
 
 
@@ -730,11 +734,22 @@ document.addEventListener('DOMContentLoaded', () => {
         listDiv.innerHTML = '';
         if (state.investments.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無部位</p>';
 
+        const displayCurrency = document.getElementById('portfolio-currency')?.value || 'TWD';
+        let fxRate = 1;
+        if (displayCurrency === 'USD') fxRate = 1 / 32.5;
+        if (displayCurrency === 'HKD') fxRate = 1 / 4.15;
+        if (displayCurrency === 'SGD') fxRate = 1 / 24.1;
+
+        const formatVal = (val) => {
+            let converted = val * fxRate;
+            return converted.toLocaleString('en-US', { 
+                maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2,
+                minimumFractionDigits: displayCurrency === 'TWD' ? 0 : 2
+            });
+        };
+
         state.investments.forEach(i => {
             let iconClass = 'ic-stock';
-            if (i.type === 'crypto') iconClass = 'ic-crypto';
-            if (i.type === 'commodity') iconClass = 'ic-commodity';
-
             let iconCode = 'fa-chart-line';
             if (i.type === 'crypto') {
                 iconClass = 'ic-crypto';
@@ -762,14 +777,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
                         <div class="tx-details">
                             <div class="item-name">${i.symbol}</div>
-                            <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 總投資成本: $${Math.floor(cost).toLocaleString()}</div>
+                            <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
                         </div>
                     </div>
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
                         <div style="text-align: right;">
-                            <div class="item-value text-main">NT$ ${Math.floor(val).toLocaleString()}</div>
+                            <div class="item-value text-main">${formatVal(val)}</div>
                             <div class="item-price-change ${pnlClass}">
-                                ${pnlSign} NT$ ${Math.floor(pnl).toLocaleString()} (${pnlSign}${pnlPercent.toFixed(2)}%)
+                                ${pnlSign} ${formatVal(Math.abs(pnl))} (${pnlSign}${pnlPercent.toFixed(2)}%)
                             </div>
                         </div>
                         <div class="item-actions">
@@ -795,11 +810,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                         <div class="tx-details">
                             <div class="item-name">${d.name}</div>
-                            <div class="item-sub">每月現金流負擔: NT$ ${d.monthly.toLocaleString()}</div>
+                            <div class="item-sub">每月現金流負擔: ${d.monthly.toLocaleString()}</div>
                         </div>
                     </div>
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
-                        <div class="item-value negative">- NT$ ${d.total.toLocaleString()}</div>
+                        <div class="item-value negative">- ${d.total.toLocaleString()}</div>
                         <div class="item-actions">
                             <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
                             <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
