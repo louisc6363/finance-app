@@ -690,6 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.closest('.edit-tx-btn').getAttribute('data-id');
             const item = state.transactions.find(t => t.id === id);
             if (item) {
+                if (item.linkId) return alert('此紀錄為系統連動項目，請由投資組合端進行買賣操作或刪除。');
                 document.getElementById('t-type').value = item.type;
                 document.getElementById('t-amount').value = item.amount;
                 document.getElementById('t-category').value = item.category;
@@ -734,6 +735,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (e.target.closest('.del-tx-btn')) {
             const id = e.target.closest('.del-tx-btn').getAttribute('data-id');
+            const item = state.transactions.find(t => t.id === id);
+            if (item && item.linkId) return alert('此紀錄為系統連動項目，為確保數據正確，無法在此手動刪除。');
+            
             if (confirm('確定刪除此收支紀錄嗎？')) {
                 captureHistory();
                 state.transactions = state.transactions.filter(t => t.id !== id);
@@ -783,8 +787,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
                         <div class="tx-amount ${isInc ? 'positive' : 'negative'}">${isInc ? '+' : '-'} NT$ ${Number(t.amount).toLocaleString()}</div>
                         <div class="item-actions">
-                            <button class="action-btn edit-tx-btn" data-id="${t.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
-                            <button class="action-btn del-tx-btn" data-id="${t.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                            ${t.linkId ? `
+                                <span style="font-size: 0.75rem; color: var(--primary); opacity: 0.7; font-weight: 500;">
+                                    <i class="fa-solid fa-lock"></i> 系統鎖定
+                                </span>
+                            ` : `
+                                <button class="action-btn edit-tx-btn" data-id="${t.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
+                                <button class="action-btn del-tx-btn" data-id="${t.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                            `}
                         </div>
                     </div>
                 </div>`;
