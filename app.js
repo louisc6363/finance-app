@@ -1005,6 +1005,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             modal.querySelector('#del-only').onclick = () => {
                 captureHistory();
+                // 解除所有關聯交易的「系統鎖定」
+                state.transactions.forEach(t => {
+                    if (t.linkId === id) delete t.linkId;
+                });
                 state.debts = state.debts.filter(d => d.id !== id);
                 saveState();
                 document.body.removeChild(modal);
@@ -1043,6 +1047,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // 2. 移除負債
+                state.transactions.forEach(t => {
+                    if (t.linkId === id) delete t.linkId;
+                });
                 state.debts = state.debts.filter(d => d.id !== id);
                 saveState();
                 alert('結清成功！已為您記錄此筆支出並結案。');
