@@ -1078,7 +1078,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.del-tx-btn')) {
             const id = e.target.closest('.del-tx-btn').getAttribute('data-id');
             const item = state.transactions.find(t => t.id === id);
-            if (item && item.linkId) return alert('此紀錄為系統連動項目，為確保數據正確，無法在此手動刪除。');
+            if (item && item.linkId && state.debts.some(d => d.id === item.linkId)) {
+                alert('此紀錄為負債系統連動項目，若欲刪除，請至「負債管理」進行項目結清或移除。');
+                return;
+            }
 
             if (confirm('確定刪除此收支紀錄嗎？')) {
                 captureHistory();
