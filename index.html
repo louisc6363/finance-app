@@ -286,6 +286,16 @@
                                 <input type="number" id="d-paydate" placeholder="如：5號扣款請輸入 5" required min="1" max="31">
                             </div>
 
+                            <div class="form-group" style="padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <label class="ios-switch-label" style="display:flex; align-items:center; cursor:pointer;" title="取消勾選此項可建立『期初負債』，系統將不會增加目前的現金水位。">
+                                    <div class="ios-switch" style="margin-right: 12px;">
+                                        <input type="checkbox" id="d-sync-cash">
+                                        <span class="ios-slider"></span>
+                                    </div>
+                                    <span style="font-size:0.9rem; font-weight:600; color:var(--danger);">同步產生收入交易 (增加現金水位)</span>
+                                </label>
+                            </div>
+
                             <!-- Realtime Interest Rate Extrapolator Display -->
                             <div class="card glass primary-card" style="margin-top:20px; text-align:center; padding:10px;">
                                 <div style="font-size: 0.85rem; color:var(--text-muted); margin-bottom:5px;">系統換算實質年利率 (APR)</div>

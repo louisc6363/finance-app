@@ -135,6 +135,101 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
+    const bankDictionary = [
+        { code: "004", name: "臺灣銀行" },
+        { code: "005", name: "臺灣土地銀行" },
+        { code: "006", name: "合作金庫商業銀行" },
+        { code: "007", name: "第一商業銀行" },
+        { code: "008", name: "華南商業銀行" },
+        { code: "009", name: "彰化商業銀行" },
+        { code: "011", name: "上海商業儲蓄銀行" },
+        { code: "012", name: "台北富邦商業銀行" },
+        { code: "013", name: "國泰世華商業銀行" },
+        { code: "016", name: "高雄銀行" },
+        { code: "017", name: "兆豐國際商業銀行" },
+        { code: "018", name: "農業金庫" },
+        { code: "021", name: "花旗(台灣)商業銀行" },
+        { code: "039", name: "澳商澳盛銀行" },
+        { code: "048", name: "王道商業銀行" },
+        { code: "050", name: "臺灣中小企業銀行" },
+        { code: "052", name: "渣打國際商業銀行" },
+        { code: "053", name: "台中商業銀行" },
+        { code: "054", name: "京城商業銀行" },
+        { code: "101", name: "瑞興商業銀行" },
+        { code: "102", name: "華泰商業銀行" },
+        { code: "103", name: "臺灣新光商業銀行" },
+        { code: "108", name: "陽信商業銀行" },
+        { code: "118", name: "板信商業銀行" },
+        { code: "147", name: "三信商業銀行" },
+        { code: "700", name: "中華郵政" },
+        { code: "803", name: "聯邦商業銀行" },
+        { code: "805", name: "遠東國際商業銀行" },
+        { code: "806", name: "元大商業銀行" },
+        { code: "807", name: "永豐商業銀行" },
+        { code: "808", name: "玉山商業銀行" },
+        { code: "809", name: "凱基商業銀行" },
+        { code: "810", name: "星展(台灣)商業銀行" },
+        { code: "812", name: "台新國際商業銀行" },
+        { code: "816", name: "安泰商業銀行" },
+        { code: "822", name: "中國信託商業銀行" },
+        { code: "823", name: "將來商業銀行" },
+        { code: "824", name: "連線商業銀行 (LINE Bank)" },
+        { code: "826", name: "樂天國際商業銀行" }
+    ];
+
+    const setupAutocomplete = (inputId, suggestionId, dataProvider) => {
+        const input = document.getElementById(inputId);
+        const suggestionBox = document.getElementById(suggestionId);
+        if (!input || !suggestionBox) return;
+
+        input.addEventListener('input', (e) => {
+            let val = e.target.value.toLowerCase().trim();
+            suggestionBox.innerHTML = '';
+            if (!val) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            let matches = dataProvider.filter(item =>
+                item.code.includes(val) ||
+                item.name.toLowerCase().includes(val)
+            ).sort((a, b) => {
+                // 精準度排序：代號完全符合 > 名稱開頭符合 > 代號包含 > 名稱包含
+                if (a.code === val) return -1;
+                if (b.code === val) return 1;
+                let aStart = a.name.startsWith(val) ? 0 : 1;
+                let bStart = b.name.startsWith(val) ? 0 : 1;
+                if (aStart !== bStart) return aStart - bStart;
+                return a.code.localeCompare(b.code);
+            }).slice(0, 15);
+
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    let li = document.createElement('li');
+                    li.innerHTML = `<span class="sym-code" style="color:var(--primary); font-family:monospace; min-width:40px; display:inline-block;">${m.code}</span><span style="font-size:0.9rem; padding-left:12px;">${m.name}</span>`;
+                    li.addEventListener('click', () => {
+                        input.value = `${m.code} ${m.name}`;
+                        suggestionBox.style.display = 'none';
+                    });
+                    suggestionBox.appendChild(li);
+                });
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target !== input && e.target !== suggestionBox) {
+                suggestionBox.style.display = 'none';
+            }
+        });
+    };
+
+    setupAutocomplete('d-bank', 'bank-suggestions', bankDictionary);
+    setupAutocomplete('d-repay-bank', 'repay-bank-suggestions', bankDictionary);
+
+
     const iSymbolInput = document.getElementById('i-symbol');
     const suggestionBox = document.getElementById('symbol-suggestions');
 
@@ -213,6 +308,37 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('portfolio-currency')?.addEventListener('change', () => {
             renderInvestments();
         });
+
+        // --- 負債區塊：實時 APR 換算邏輯 ---
+        const debtInputs = ['d-total', 'd-years', 'd-monthly'];
+        debtInputs.forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => {
+                const principal = parseFloat(document.getElementById('d-total').value);
+                const years = parseFloat(document.getElementById('d-years').value);
+                const monthly = parseFloat(document.getElementById('d-monthly').value);
+                const display = document.getElementById('d-apr-display');
+
+                if (principal > 0 && years > 0 && monthly > 0) {
+                    const apr = calculateAPR(principal, monthly, years);
+                    display.innerText = apr + ' %';
+                    display.style.color = apr > 10 ? 'var(--danger)' : 'var(--success)';
+                } else {
+                    display.innerText = '- %';
+                }
+            });
+        });
+
+        const calculateAPR = (P, M, N_years) => {
+            const N = N_years * 12;
+            let low = 0, high = 1.0; // 0% to 100% per month (excessive but safe)
+            for (let i = 0; i < 40; i++) {
+                let mid = (low + high) / 2;
+                let estimatedM = P * (mid * Math.pow(1 + mid, N)) / (Math.pow(1 + mid, N) - 1);
+                if (estimatedM > M) high = mid;
+                else low = mid;
+            }
+            return (low * 12 * 100).toFixed(2);
+        };
     }
 
     // --- 摺疊狀態管理 ---
@@ -291,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.transactions.forEach(t => {
             const txTime = new Date(t.date).getTime();
             const amount = Number(t.amount);
-            
+
             // 累計歷史總量
             if (t.type === 'income') cumulativeSurplus += amount;
             else if (t.type === 'expense') cumulativeSurplus -= amount;
@@ -487,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // [修正] 字典屬性應為 .sym 而非 .symbol
             const supportedItems = assetDictionary[type] || [];
             const isSupported = supportedItems.some(item => item.sym && item.sym.toUpperCase() === symbol);
-            
+
             if (!isSupported) {
                 const proceed = confirm(`⚠️ 注意：代號 [ ${symbol} ] 未在系統同步清單中。\n\n這代表我們無法為您自動更新市價與計算損益。您仍要「硬執行」建立此部位嗎？\n\n(點擊取消可回頭修正，點擊確定則建立離線部位)`);
                 if (!proceed) return;
@@ -525,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     invData.id = invId;
                     state.investments.push(invData);
                 }
-                
+
                 // [連動系統] 僅當用戶勾選「同步產生支出」時才扣除現金
                 const syncCash = document.getElementById('i-sync-cash')?.checked;
                 if (syncCash) {
@@ -551,6 +677,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!document.getElementById('d-total').value) return;
             captureHistory();
             const debtData = {
+                bank: document.getElementById('d-bank').value,
+                repayBank: document.getElementById('d-repay-bank').value,
                 name: document.getElementById('d-name').value,
                 total: parseFloat(document.getElementById('d-total').value),
                 monthly: parseFloat(document.getElementById('d-monthly').value)
@@ -565,8 +693,24 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 debtData.id = Date.now().toString();
                 state.debts.push(debtData);
+
+                // [連動系統] 僅當用戶勾選「同步產生收入」時才增加現金
+                const syncCash = document.getElementById('d-sync-cash')?.checked;
+                if (syncCash) {
+                    state.transactions.unshift({
+                        id: 'sys-debt-' + Date.now(),
+                        type: 'income',
+                        amount: debtData.total,
+                        category: '[系統] 貸款撥款紀錄',
+                        date: today,
+                        relatedAsset: debtData.name,
+                        linkId: debtData.id
+                    });
+                    alert(`撥款成功！已自動為您記錄一筆 [ ${debtData.total.toLocaleString()} ] 的現金流入。`);
+                }
             }
             saveState(); dForm.reset();
+            document.getElementById('d-apr-display').innerText = '- %';
         });
     }
 
@@ -738,6 +882,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.closest('.edit-debt-btn').getAttribute('data-id');
             const item = state.debts.find(d => d.id === id);
             if (item) {
+                document.getElementById('d-bank').value = item.bank || '';
+                document.getElementById('d-repay-bank').value = item.repayBank || '';
                 document.getElementById('d-name').value = item.name;
                 document.getElementById('d-total').value = item.total;
                 document.getElementById('d-monthly').value = item.monthly;
@@ -752,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.closest('.del-tx-btn').getAttribute('data-id');
             const item = state.transactions.find(t => t.id === id);
             if (item && item.linkId) return alert('此紀錄為系統連動項目，為確保數據正確，無法在此手動刪除。');
-            
+
             if (confirm('確定刪除此收支紀錄嗎？')) {
                 captureHistory();
                 state.transactions = state.transactions.filter(t => t.id !== id);
@@ -830,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formatVal = (val) => {
             let converted = val * fxRate;
-            return converted.toLocaleString('en-US', { 
+            return converted.toLocaleString('en-US', {
                 maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2,
                 minimumFractionDigits: displayCurrency === 'TWD' ? 0 : 2
             });
@@ -859,9 +1005,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 建立分類容器
             const groupSection = document.createElement('div');
             groupSection.className = 'asset-group';
-            
+
             const isCollapsed = collapsedCategories.has(cat.type);
-            
+
             // 建立分類標頭 (毛玻璃感)
             groupSection.innerHTML = `
                 <div class="asset-group-header" data-type="${cat.type}">
@@ -895,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (i.type === 'crypto') { iconClass = 'ic-crypto'; iconCode = 'fa-bitcoin-sign'; }
                 else if (i.type === 'bonds') { iconClass = 'ic-debt'; iconCode = 'fa-file-contract'; }
                 else if (i.type === 'commodity') { iconClass = 'ic-commodity'; iconCode = 'fa-coins'; }
-                
+
                 let val = Number(i.amount) * Number(i.currentPrice);
                 let cost = Number(i.totalCost) || val;
                 let pnl = val - cost;
@@ -943,8 +1089,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tx-info">
                         <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                         <div class="tx-details">
-                            <div class="item-name">${d.name}</div>
-                            <div class="item-sub">每月現金流負擔: ${d.monthly.toLocaleString()}</div>
+                            <div class="item-name">${d.name} <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(${d.bank || '未設定銀行'})</span></div>
+                            <div class="item-sub">還款: ${d.repayBank || '未知'} | 每月現金流: ${d.monthly.toLocaleString()}</div>
                         </div>
                     </div>
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
