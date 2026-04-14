@@ -1120,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
                         <div class="tx-amount ${isInc ? 'positive' : 'negative'}">${isInc ? '+' : '-'} NT$ ${Number(t.amount).toLocaleString()}</div>
                         <div class="item-actions">
-                            ${t.linkId ? `
+                            ${(t.linkId && state.debts.some(d => d.id === t.linkId)) ? `
                                 <span style="font-size: 0.75rem; color: var(--primary); opacity: 0.7; font-weight: 500;">
                                     <i class="fa-solid fa-lock"></i> 系統鎖定
                                 </span>
