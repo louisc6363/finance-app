@@ -229,6 +229,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutocomplete('d-bank', 'bank-suggestions', bankDictionary);
     setupAutocomplete('d-repay-bank', 'repay-bank-suggestions', bankDictionary);
 
+    // --- 全局數值運算工具 ---
+    const calculateAPR = (P, M, N_years) => {
+        try {
+            const N = N_years * 12;
+            if (P <= 0 || N <= 0 || M <= 0) return "0.00";
+            let low = 0, high = 1.0; 
+            for (let i = 0; i < 40; i++) {
+                let mid = (low + high) / 2;
+                let estimatedM = P * (mid * Math.pow(1 + mid, N)) / (Math.pow(1 + mid, N) - 1);
+                if (estimatedM > M) high = mid;
+                else low = mid;
+            }
+            return (low * 12 * 100).toFixed(2);
+        } catch (e) {
+            return "0.00";
+        }
+    };
+
     // --- 負債自動化系統模組 ---
     const getElapsedMonths = (startDate) => {
         if (!startDate) return 0;
