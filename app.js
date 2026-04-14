@@ -231,29 +231,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 負債自動化系統模組 ---
     const getElapsedMonths = (startDate) => {
+        if (!startDate) return 0;
         const start = new Date(startDate);
+        if (isNaN(start.getTime())) return 0;
         const now = new Date();
-        return (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+        const diff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+        return Math.max(0, diff);
     };
 
     const calculateBalance = (debt) => {
-        const principal = Number(debt.total);
-        const monthlyPayment = Number(debt.monthly);
-        const years = Number(debt.years);
-        const startDate = debt.startDate;
-        const aprValue = parseFloat(calculateAPR(principal, monthlyPayment, years)) / 100;
-        const monthlyRate = aprValue / 12;
+        try {
+            const principal = Number(debt.total) || 0;
+            const monthlyPayment = Number(debt.monthly) || 0;
+            const years = Number(debt.years) || 0;
+            const startDate = debt.startDate;
+            
+            if (!startDate || years <= 0) return principal;
 
-        const k = getElapsedMonths(startDate);
-        if (k <= 0) return principal;
-        
-        // 金融公式：剩餘本金 B = P(1+r)^k - M[(1+r)^k - 1]/r
-        if (monthlyRate === 0) return Math.max(0, principal - monthlyPayment * k);
-        
-        const compound = Math.pow(1 + monthlyRate, k);
-        const balance = principal * compound - monthlyPayment * (compound - 1) / monthlyRate;
-        
-        return Math.max(0, balance);
+            const aprValue = parseFloat(calculateAPR(principal, monthlyPayment, years)) / 100;
+            const monthlyRate = aprValue / 12;
+
+            const k = getElapsedMonths(startDate);
+            if (k <= 0) return principal;
+            
+            if (monthlyRate === 0) return Math.max(0, principal - monthlyPayment * k);
+            
+            const compound = Math.pow(1 + monthlyRate, k);
+            const balance = principal * compound - monthlyPayment * (compound - 1) / monthlyRate;
+            
+            return isNaN(balance) ? principal : Math.max(0, balance);
+        } catch (e) {
+            console.error('Balance calculation error:', e);
+            return Number(debt.total) || 0;
+        }
     };
 
     const processAutomaticRepayments = () => {
@@ -262,19 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let changed = false;
 
         state.debts.forEach(debt => {
+            if (!debt.startDate || !debt.monthly) return;
             if (!debt.lastProcessedDate) debt.lastProcessedDate = debt.startDate;
             
             let lastDate = new Date(debt.lastProcessedDate);
-            let startDate = new Date(debt.startDate);
             let payDay = parseInt(debt.payDate || 1);
+            let safetyCounter = 0; // 防無限迴圈
 
-            // 補其從上次處理到現在的所有月份
-            while (true) {
-                // 下一個扣款日期
+            while (safetyCounter < 240) { // 最多補 20 年紀錄
                 let nextDate = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, payDay);
-                if (nextDate > now) break;
+                if (isNaN(nextDate.getTime()) || nextDate > now) break;
 
-                // 產生支出紀錄
                 state.transactions.unshift({
                     id: 'auto-repay-' + Date.now() + Math.random(),
                     type: 'expense',
@@ -288,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastDate = nextDate;
                 changed = true;
                 debt.lastProcessedDate = nextDate.toISOString().split('T')[0];
+                safetyCounter++;
             }
         });
 
@@ -514,7 +523,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentCash = state.baseCash + cumulativeSurplus;
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
-        state.debts.forEach(d => totalDebts += Number(d.total));
+        state.debts.forEach(d => {
+            // 修正：總覽卡片應顯示「剩餘本金」而非「原始核貸本金」
+            totalDebts += calculateBalance(d);
+        });
         let netWorth = totalAssets - totalDebts;
 
         return { tIncome, tExpense, cashflowSurplus, investTotal, currentCash, totalAssets, totalDebts, netWorth };
@@ -1159,63 +1171,68 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.debts.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無貸款</p>';
 
         state.debts.forEach(d => {
-            const currentBalance = calculateBalance(d);
-            const elapsed = getElapsedMonths(d.startDate);
-            const totalMonths = d.years * 12;
-            const progress = Math.min(100, (elapsed / totalMonths) * 100);
-            const apr = calculateAPR(d.total, d.monthly, d.years);
+            try {
+                const currentBalance = calculateBalance(d);
+                const elapsed = getElapsedMonths(d.startDate);
+                const yearsSafe = Number(d.years) || 1;
+                const totalMonths = yearsSafe * 12;
+                const progress = Math.min(100, (elapsed / totalMonths) * 100);
+                const apr = calculateAPR(Number(d.total) || 0, Number(d.monthly) || 0, yearsSafe);
 
-            listDiv.innerHTML += `
-                <div class="debt-item" id="debt-card-${d.id}">
-                    <div class="debt-main-info" data-id="${d.id}">
-                        <div class="tx-info">
-                            <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            <div class="tx-details">
-                                <div class="item-name">${d.name} <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(${d.bank || '未設定銀行'})</span></div>
-                                <div class="item-sub">剩餘本金: NT$ ${Math.round(currentBalance).toLocaleString()} <i class="fa-solid fa-chevron-down debt-toggle-icon"></i></div>
+                listDiv.innerHTML += `
+                    <div class="debt-item" id="debt-card-${d.id}">
+                        <div class="debt-main-info" data-id="${d.id}">
+                            <div class="tx-info">
+                                <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                                <div class="tx-details">
+                                    <div class="item-name">${d.name} <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(${d.bank || '未設定銀行'})</span></div>
+                                    <div class="item-sub">剩餘本金: NT$ ${Math.round(currentBalance).toLocaleString()} <i class="fa-solid fa-chevron-down debt-toggle-icon"></i></div>
+                                </div>
+                            </div>
+                            <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
+                                <div class="item-value negative">- ${Math.round(currentBalance).toLocaleString()}</div>
+                                <div class="item-actions">
+                                    <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
+                                    <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                                </div>
                             </div>
                         </div>
-                        <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
-                            <div class="item-value negative">- ${Math.round(currentBalance).toLocaleString()}</div>
-                            <div class="item-actions">
-                                <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
-                                <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                        <div class="debt-detail-panel" id="debt-detail-${d.id}">
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">初始核貸金額</div>
+                                    <div class="detail-value">NT$ ${Number(d.total || 0).toLocaleString()}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">實質年利率 (APR)</div>
+                                    <div class="detail-value text-success">${apr} %</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">每月還款金額</div>
+                                    <div class="detail-value">NT$ ${Number(d.monthly || 0).toLocaleString()}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">每月扣款日期</div>
+                                    <div class="detail-value">${d.payDate || '1'} 號</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
+                                    <span>還款進度</span>
+                                    <span>${Math.floor(elapsed)} / ${totalMonths} 期</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); text-align:center;">
+                                    已還款約 NT$ ${( (Number(d.monthly) || 0) * elapsed).toLocaleString()} 元
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="debt-detail-panel" id="debt-detail-${d.id}">
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <div class="detail-label">初始核貸金額</div>
-                                <div class="detail-value">NT$ ${Number(d.total).toLocaleString()}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">實質年利率 (APR)</div>
-                                <div class="detail-value text-success">${apr} %</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">每月還款金額</div>
-                                <div class="detail-value">NT$ ${Number(d.monthly).toLocaleString()}</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">每月扣款日期</div>
-                                <div class="detail-value">${d.payDate} 號</div>
-                            </div>
-                        </div>
-                        <div class="progress-container">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
-                                <span>還款進度</span>
-                                <span>${Math.floor(elapsed)} / ${totalMonths} 期</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: ${progress}%"></div>
-                            </div>
-                            <div style="font-size:0.75rem; color:var(--text-muted); text-align:center;">
-                                已還款約 NT$ ${(d.monthly * elapsed).toLocaleString()} 元
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
+                    </div>`;
+            } catch (err) {
+                console.error("Error rendering debt item:", err);
+            }
         });
 
         // 加入展開點擊事件
