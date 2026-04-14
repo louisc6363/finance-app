@@ -1116,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listDiv.innerHTML = '';
         if (state.transactions.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無紀錄</p>';
 
-        if (manageState.tx) listDiv.classList.add('manage-active');
+        if (manageMode.tx) listDiv.classList.add('manage-active');
         else listDiv.classList.remove('manage-active');
 
         state.transactions.forEach(t => {
@@ -1289,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isChecked = selectedIds.debt.has(d.id);
 
                 listDiv.innerHTML += `
-                    <div class="debt-item ${manageState.debt ? 'manage-active' : ''}" id="debt-card-${d.id}">
+                    <div class="debt-item ${manageMode.debt ? 'manage-active' : ''}" id="debt-card-${d.id}">
                         <div class="debt-main-info" data-id="${d.id}">
                             <div class="item-checkbox-container">
                                 <div class="custom-checkbox ${isChecked ? 'checked' : ''}" data-id="${d.id}" data-type="debt"></div>
