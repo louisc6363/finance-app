@@ -774,6 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (!document.getElementById('d-total').value) return;
             captureHistory();
+            const syncCash = document.getElementById('d-sync-cash')?.checked;
             const debtData = {
                 bank: document.getElementById('d-bank').value,
                 repayBank: document.getElementById('d-repay-bank').value,
@@ -783,7 +784,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthly: parseFloat(document.getElementById('d-monthly').value),
                 payDate: parseInt(document.getElementById('d-paydate').value),
                 startDate: document.getElementById('d-startdate').value,
-                lastProcessedDate: document.getElementById('d-startdate').value
+                // [優化] 如果是期初負債 (不勾選同步)，將處理日期設為今天，避免補錄過往交易
+                lastProcessedDate: syncCash ? document.getElementById('d-startdate').value : today
             };
 
             if (editingState.debtId) {
@@ -980,6 +982,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        if (e.target.closest('.del-debt-btn')) {
+            const id = e.target.closest('.del-debt-btn').getAttribute('data-id');
+            const item = state.debts.find(d => d.id === id);
+            if (!item) return;
+
+            const deleteTransactions = confirm(`確定要刪除負債「${item.name}」嗎？\n\n點擊「確定」：同步刪除所有相關的自動還款紀錄。\n點擊「取消」：僅刪除此負債，保留過往還款支出帳目。`);
+            
+            if (deleteTransactions !== null) {
+                captureHistory();
+                if (deleteTransactions) {
+                    state.transactions = state.transactions.filter(t => t.linkId !== id);
+                }
+                state.debts = state.debts.filter(d => d.id !== id);
+                saveState();
+            }
+        }
+
+        // [新增] 提前結清邏輯
+        if (e.target.closest('.settle-debt-btn')) {
+            const id = e.target.closest('.settle-debt-btn').getAttribute('data-id');
+            const item = state.debts.find(d => d.id === id);
+            if (!item) return;
+
+            const currentBalance = calculateBalance(item);
+            if (confirm(`確定要提前結清「${item.name}」嗎？\n\n系統將產生一筆 NT$ ${Math.round(currentBalance).toLocaleString()} 的「貸款提前結清」支出，隨後將此負債結案。`)) {
+                captureHistory();
+                
+                // 1. 產生結清支出
+                state.transactions.unshift({
+                    id: 'settle-' + Date.now(),
+                    type: 'expense',
+                    amount: Math.round(currentBalance),
+                    category: '[系統] 貸款提前結清',
+                    date: today,
+                    relatedAsset: item.name,
+                    linkId: item.id
+                });
+
+                // 2. 移除負債
+                state.debts = state.debts.filter(d => d.id !== id);
+                saveState();
+                alert('結清成功！已為您記錄此筆支出並結案。');
+            }
+        }
+
         if (e.target.closest('.edit-debt-btn')) {
             const id = e.target.closest('.edit-debt-btn').getAttribute('data-id');
             const item = state.debts.find(d => d.id === id);
@@ -1022,15 +1069,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.investments = state.investments.filter(i => i.id !== id);
                 // 2. 精準連動撤銷：僅刪除 linkId 匹配的自動交易
                 state.transactions = state.transactions.filter(t => t.linkId !== id);
-                saveState();
-            }
-        }
-
-        if (e.target.closest('.del-debt-btn')) {
-            const id = e.target.closest('.del-debt-btn').getAttribute('data-id');
-            if (confirm('確定這筆債務已經還清並刪除嗎？')) {
-                captureHistory();
-                state.debts = state.debts.filter(t => t.id !== id);
                 saveState();
             }
         }
