@@ -987,16 +987,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = state.debts.find(d => d.id === id);
             if (!item) return;
 
-            const deleteTransactions = confirm(`確定要刪除負債「${item.name}」嗎？\n\n點擊「確定」：同步刪除所有相關的自動還款紀錄。\n點擊「取消」：僅刪除此負債，保留過往還款支出帳目。`);
-            
-            if (deleteTransactions !== null) {
+            // 建立三鍵式彈窗
+            const modal = document.createElement('div');
+            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(10px);";
+            modal.innerHTML = `
+                <div class="card glass" style="width:360px; padding:30px; text-align:center; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="margin-bottom:15px; color:var(--text-main);">刪除負債確認</h3>
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:25px; line-height:1.5;">您要如何處理這筆負債？</p>
+                    <button id="del-only" class="submit-btn" style="width:100%; margin-bottom:12px; background:var(--primary); font-size:0.9rem;">僅刪除負債項目</button>
+                    <button id="del-both" class="submit-btn" style="width:100%; margin-bottom:20px; background:var(--danger); font-size:0.9rem;">同步移除所有扣款紀錄</button>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top:15px;">
+                        <button id="del-cancel" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.9rem;">取消並返回</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.querySelector('#del-only').onclick = () => {
                 captureHistory();
-                if (deleteTransactions) {
-                    state.transactions = state.transactions.filter(t => t.linkId !== id);
-                }
                 state.debts = state.debts.filter(d => d.id !== id);
                 saveState();
-            }
+                document.body.removeChild(modal);
+            };
+            modal.querySelector('#del-both').onclick = () => {
+                captureHistory();
+                state.transactions = state.transactions.filter(t => t.linkId !== id);
+                state.debts = state.debts.filter(d => d.id !== id);
+                saveState();
+                document.body.removeChild(modal);
+            };
+            modal.querySelector('#del-cancel').onclick = () => {
+                document.body.removeChild(modal);
+            };
         }
 
         // [新增] 提前結清邏輯
@@ -1248,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
                                 <div class="item-value negative">- ${Math.round(currentBalance).toLocaleString()}</div>
                                 <div class="item-actions">
+                                    <button class="action-btn settle-debt-btn" data-id="${d.id}" title="提前結清" style="color: var(--success);"><i class="fa-solid fa-sack-dollar" style="pointer-events: none;"></i></button>
                                     <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
                                     <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
                                 </div>
