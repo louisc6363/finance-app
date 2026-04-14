@@ -229,6 +229,74 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutocomplete('d-bank', 'bank-suggestions', bankDictionary);
     setupAutocomplete('d-repay-bank', 'repay-bank-suggestions', bankDictionary);
 
+    // --- 負債自動化系統模組 ---
+    const getElapsedMonths = (startDate) => {
+        const start = new Date(startDate);
+        const now = new Date();
+        return (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    };
+
+    const calculateBalance = (debt) => {
+        const principal = Number(debt.total);
+        const monthlyPayment = Number(debt.monthly);
+        const years = Number(debt.years);
+        const startDate = debt.startDate;
+        const aprValue = parseFloat(calculateAPR(principal, monthlyPayment, years)) / 100;
+        const monthlyRate = aprValue / 12;
+
+        const k = getElapsedMonths(startDate);
+        if (k <= 0) return principal;
+        
+        // 金融公式：剩餘本金 B = P(1+r)^k - M[(1+r)^k - 1]/r
+        if (monthlyRate === 0) return Math.max(0, principal - monthlyPayment * k);
+        
+        const compound = Math.pow(1 + monthlyRate, k);
+        const balance = principal * compound - monthlyPayment * (compound - 1) / monthlyRate;
+        
+        return Math.max(0, balance);
+    };
+
+    const processAutomaticRepayments = () => {
+        const now = new Date();
+        const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        let changed = false;
+
+        state.debts.forEach(debt => {
+            if (!debt.lastProcessedDate) debt.lastProcessedDate = debt.startDate;
+            
+            let lastDate = new Date(debt.lastProcessedDate);
+            let startDate = new Date(debt.startDate);
+            let payDay = parseInt(debt.payDate || 1);
+
+            // 補其從上次處理到現在的所有月份
+            while (true) {
+                // 下一個扣款日期
+                let nextDate = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, payDay);
+                if (nextDate > now) break;
+
+                // 產生支出紀錄
+                state.transactions.unshift({
+                    id: 'auto-repay-' + Date.now() + Math.random(),
+                    type: 'expense',
+                    amount: debt.monthly,
+                    category: '[自動] 貸款還款',
+                    date: nextDate.toISOString().split('T')[0],
+                    relatedAsset: debt.name,
+                    linkId: debt.id
+                });
+                
+                lastDate = nextDate;
+                changed = true;
+                debt.lastProcessedDate = nextDate.toISOString().split('T')[0];
+            }
+        });
+
+        if (changed) {
+            saveState();
+            // alert('系統偵測到還款日期已過，已為您自動補上這段期間的還款紀錄！');
+        }
+    };
+
 
     const iSymbolInput = document.getElementById('i-symbol');
     const suggestionBox = document.getElementById('symbol-suggestions');
@@ -681,7 +749,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 repayBank: document.getElementById('d-repay-bank').value,
                 name: document.getElementById('d-name').value,
                 total: parseFloat(document.getElementById('d-total').value),
-                monthly: parseFloat(document.getElementById('d-monthly').value)
+                years: parseFloat(document.getElementById('d-years').value),
+                monthly: parseFloat(document.getElementById('d-monthly').value),
+                payDate: parseInt(document.getElementById('d-paydate').value),
+                startDate: document.getElementById('d-startdate').value,
+                lastProcessedDate: document.getElementById('d-startdate').value
             };
 
             if (editingState.debtId) {
@@ -886,7 +958,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('d-repay-bank').value = item.repayBank || '';
                 document.getElementById('d-name').value = item.name;
                 document.getElementById('d-total').value = item.total;
+                document.getElementById('d-years').value = item.years || '';
                 document.getElementById('d-monthly').value = item.monthly;
+                document.getElementById('d-paydate').value = item.payDate || '';
+                document.getElementById('d-startdate').value = item.startDate || '';
                 editingState.debtId = id;
                 const btn = document.querySelector('#debt-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -1084,23 +1159,75 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.debts.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無貸款</p>';
 
         state.debts.forEach(d => {
+            const currentBalance = calculateBalance(d);
+            const elapsed = getElapsedMonths(d.startDate);
+            const totalMonths = d.years * 12;
+            const progress = Math.min(100, (elapsed / totalMonths) * 100);
+            const apr = calculateAPR(d.total, d.monthly, d.years);
+
             listDiv.innerHTML += `
-                <div class="debt-item">
-                    <div class="tx-info">
-                        <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                        <div class="tx-details">
-                            <div class="item-name">${d.name} <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(${d.bank || '未設定銀行'})</span></div>
-                            <div class="item-sub">還款: ${d.repayBank || '未知'} | 每月現金流: ${d.monthly.toLocaleString()}</div>
+                <div class="debt-item" id="debt-card-${d.id}">
+                    <div class="debt-main-info" data-id="${d.id}">
+                        <div class="tx-info">
+                            <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            <div class="tx-details">
+                                <div class="item-name">${d.name} <span style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">(${d.bank || '未設定銀行'})</span></div>
+                                <div class="item-sub">剩餘本金: NT$ ${Math.round(currentBalance).toLocaleString()} <i class="fa-solid fa-chevron-down debt-toggle-icon"></i></div>
+                            </div>
+                        </div>
+                        <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
+                            <div class="item-value negative">- ${Math.round(currentBalance).toLocaleString()}</div>
+                            <div class="item-actions">
+                                <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
+                                <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                            </div>
                         </div>
                     </div>
-                    <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
-                        <div class="item-value negative">- ${d.total.toLocaleString()}</div>
-                        <div class="item-actions">
-                            <button class="action-btn edit-debt-btn" data-id="${d.id}" title="編輯"><i class="fa-solid fa-pen" style="pointer-events: none;"></i></button>
-                            <button class="action-btn del-debt-btn" data-id="${d.id}" title="刪除"><i class="fa-solid fa-trash" style="pointer-events: none;"></i></button>
+                    <div class="debt-detail-panel" id="debt-detail-${d.id}">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">初始核貸金額</div>
+                                <div class="detail-value">NT$ ${Number(d.total).toLocaleString()}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">實質年利率 (APR)</div>
+                                <div class="detail-value text-success">${apr} %</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">每月還款金額</div>
+                                <div class="detail-value">NT$ ${Number(d.monthly).toLocaleString()}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">每月扣款日期</div>
+                                <div class="detail-value">${d.payDate} 號</div>
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
+                                <span>還款進度</span>
+                                <span>${Math.floor(elapsed)} / ${totalMonths} 期</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); text-align:center;">
+                                已還款約 NT$ ${(d.monthly * elapsed).toLocaleString()} 元
+                            </div>
                         </div>
                     </div>
                 </div>`;
+        });
+
+        // 加入展開點擊事件
+        document.querySelectorAll('.debt-main-info').forEach(header => {
+            header.addEventListener('click', (e) => {
+                if (e.target.closest('.item-actions')) return;
+                const id = header.getAttribute('data-id');
+                const detail = document.getElementById(`debt-detail-${id}`);
+                const icon = header.querySelector('.debt-toggle-icon');
+                detail.classList.toggle('show');
+                icon.classList.toggle('open');
+            });
         });
     };
 
@@ -1135,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvestments();
     renderDebts();
     fetchPrices();
+    processAutomaticRepayments(); // [自動化] 啟動時檢查並補上遺漏的扣款紀錄
 
     // [新增] 背景同步機制：每 60 秒自動更新一次全球報價，讓總覽數字隨市場波動
     setInterval(() => {
