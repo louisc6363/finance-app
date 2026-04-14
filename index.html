@@ -128,10 +128,21 @@
                     </div>
                     <div class="card glass list-card">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3>近期紀錄</h3>
-                            <button type="button" id="open-analytics-btn" class="action-btn" style="background: var(--primary); color: white; border-radius: 6px; padding: 4px 12px; font-size: 0.85rem;">
-                                <i class="fa-solid fa-chart-pie" style="padding-right:5px;"></i>圖表分析
-                            </button>
+                            <h3 style="margin-bottom:0;">近期紀錄</h3>
+                            <div style="display:flex; gap:10px;">
+                                <button class="manage-btn" id="tx-manage-btn">管理</button>
+                                <button type="button" id="open-analytics-btn" class="action-btn" style="background: var(--primary); color: white; border-radius: 6px; padding: 4px 12px; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-chart-pie" style="padding-right:5px;"></i>圖表分析
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="manage-toolbar" id="tx-manage-toolbar">
+                            <span class="selected-count" id="tx-selected-count">已選擇 0 項</span>
+                            <div style="display:flex; gap:10px;">
+                                <button class="action-btn" id="tx-batch-del" style="background:var(--danger); color:white; border:none; padding:5px 15px;">刪除所選</button>
+                                <button class="action-btn" id="tx-manage-close">取消</button>
+                            </div>
                         </div>
                         
                         <div class="filter-controls" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
@@ -221,18 +232,29 @@
                         </form>
                     </div>
                     <div class="card glass list-card">
-                        <h3 style="display:flex; align-items:center;">現有庫存明細 
-                            <div style="position: relative; margin-left: 15px; display:inline-flex; align-items:center;">
-                                <select id="portfolio-currency" style="appearance: none; -webkit-appearance: none; background: transparent; color: #10b981; border: none; font-size: 1.15rem; font-weight: 800; cursor: pointer; outline: none; padding-right: 15px;">
-                                    <option value="TWD" style="color:black;">TWD</option>
-                                    <option value="USD" style="color:black;">USD</option>
-                                    <option value="HKD" style="color:black;">HKD</option>
-                                    <option value="SGD" style="color:black;">SGD</option>
-                                </select>
-                                <i class="fa-solid fa-caret-down" style="color: #10b981; font-size: 0.95rem; position: absolute; right: 0; pointer-events: none;"></i>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="display:flex; align-items:center; margin-bottom:0;">現有庫存明細 
+                                <div style="position: relative; margin-left: 15px; display:inline-flex; align-items:center;">
+                                    <select id="portfolio-currency" style="appearance: none; -webkit-appearance: none; background: transparent; color: #10b981; border: none; font-size: 1.15rem; font-weight: 800; cursor: pointer; outline: none; padding-right: 15px;">
+                                        <option value="TWD" style="color:black;">TWD</option>
+                                        <option value="USD" style="color:black;">USD</option>
+                                        <option value="HKD" style="color:black;">HKD</option>
+                                        <option value="SGD" style="color:black;">SGD</option>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="color: #10b981; font-size: 0.95rem; position: absolute; right: 0; pointer-events: none;"></i>
+                                </div>
+                                <span id="sync-status" style="margin-left:auto; font-size: 0.85rem; font-weight: 500; color: var(--primary);"><i class="fa-solid fa-rotate"></i> 更新中...</span>
+                            </h3>
+                            <button class="manage-btn" id="inv-manage-btn">管理</button>
+                        </div>
+
+                        <div class="manage-toolbar" id="inv-manage-toolbar" style="margin-top:15px;">
+                            <span class="selected-count" id="inv-selected-count">已選擇 0 項</span>
+                            <div style="display:flex; gap:10px;">
+                                <button class="action-btn" id="inv-batch-del" style="background:var(--danger); color:white; border:none; padding:5px 15px;">同步刪除部位與相關交易</button>
+                                <button class="action-btn" id="inv-manage-close">取消</button>
                             </div>
-                            <span id="sync-status" style="margin-left:auto; font-size: 0.85rem; font-weight: 500; color: var(--primary);"><i class="fa-solid fa-rotate"></i> 更新中...</span>
-                        </h3>
+                        </div>
                         <div class="transaction-list" id="invest-list">
                             <!-- JS 動態生成 -->
                         </div>
@@ -306,7 +328,18 @@
                         </form>
                     </div>
                     <div class="card glass list-card">
-                        <h3>當前負債列表</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="margin-bottom:0;">當前負債列表</h3>
+                            <button class="manage-btn" id="debt-manage-btn">管理</button>
+                        </div>
+
+                        <div class="manage-toolbar" id="debt-manage-toolbar">
+                            <span class="selected-count" id="debt-selected-count">已選擇 0 項</span>
+                            <div style="display:flex; gap:10px;">
+                                <button class="action-btn" id="debt-batch-del" style="background:var(--danger); color:white; border:none; padding:5px 15px;">同步刪除貸款與所有還款紀錄</button>
+                                <button class="action-btn" id="debt-manage-close">取消</button>
+                            </div>
+                        </div>
                         <div class="transaction-list" id="debt-list">
                             <!-- JS 動態生成 -->
                         </div>

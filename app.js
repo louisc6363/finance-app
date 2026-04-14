@@ -573,6 +573,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let chartInstances = {};
 
+    // --- 批量管理狀態 ---
+    const manageMode = { tx: false, inv: false, debt: false };
+    const selectedIds = { tx: new Set(), inv: new Set(), debt: new Set() };
+
     const updateDashboard = (animate = true) => {
         const data = getCalculatedData();
         let ms = animate ? 1500 : 0;
@@ -1112,10 +1116,20 @@ document.addEventListener('DOMContentLoaded', () => {
         listDiv.innerHTML = '';
         if (state.transactions.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無紀錄</p>';
 
+        if (manageState.tx) listDiv.classList.add('manage-active');
+        else listDiv.classList.remove('manage-active');
+
         state.transactions.forEach(t => {
             let isInc = t.type === 'income';
+            const isLocked = t.linkId && state.debts.some(d => d.id === t.linkId);
+            const isChecked = selectedIds.tx.has(t.id);
+
             listDiv.innerHTML += `
                 <div class="tx-item">
+                    <div class="item-checkbox-container">
+                        <div class="custom-checkbox ${isLocked ? 'disabled' : ''} ${isChecked ? 'checked' : ''}" 
+                             data-id="${t.id}" data-type="tx"></div>
+                    </div>
                     <div class="tx-info">
                         <div class="tx-icon ${isInc ? 'ic-inc' : 'ic-exp'}"><i class="fa-solid ${isInc ? 'fa-arrow-trend-up' : 'fa-basket-shopping'}"></i></div>
                         <div class="tx-details"><div class="tx-cat">${t.category}</div><div class="tx-date">${t.date}</div></div>
@@ -1123,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tx-right-panel" style="display:flex; align-items:center; gap: 15px;">
                         <div class="tx-amount ${isInc ? 'positive' : 'negative'}">${isInc ? '+' : '-'} NT$ ${Number(t.amount).toLocaleString()}</div>
                         <div class="item-actions">
-                            ${(t.linkId && state.debts.some(d => d.id === t.linkId)) ? `
+                            ${isLocked ? `
                                 <span style="font-size: 0.75rem; color: var(--primary); opacity: 0.7; font-weight: 500;">
                                     <i class="fa-solid fa-lock"></i> 系統鎖定
                                 </span>
@@ -1224,8 +1238,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 let pnlClass = pnl >= 0 ? 'price-up' : 'price-down';
                 let pnlSign = pnl >= 0 ? '+' : '';
 
+                const isChecked = selectedIds.inv.has(i.id);
+
                 contentDiv.innerHTML += `
                     <div class="asset-item">
+                        <div class="item-checkbox-container">
+                            <div class="custom-checkbox ${isChecked ? 'checked' : ''}" data-id="${i.id}" data-type="inv"></div>
+                        </div>
                         <div class="tx-info">
                             <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
                             <div class="tx-details">
@@ -1267,9 +1286,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const progress = Math.min(100, (elapsed / totalMonths) * 100);
                 const apr = calculateAPR(Number(d.total) || 0, Number(d.monthly) || 0, yearsSafe);
 
+                const isChecked = selectedIds.debt.has(d.id);
+
                 listDiv.innerHTML += `
-                    <div class="debt-item" id="debt-card-${d.id}">
+                    <div class="debt-item ${manageState.debt ? 'manage-active' : ''}" id="debt-card-${d.id}">
                         <div class="debt-main-info" data-id="${d.id}">
+                            <div class="item-checkbox-container">
+                                <div class="custom-checkbox ${isChecked ? 'checked' : ''}" data-id="${d.id}" data-type="debt"></div>
+                            </div>
                             <div class="tx-info">
                                 <div class="debt-icon ic-debt"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                                 <div class="tx-details">
@@ -1362,15 +1386,101 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // [新增] 批量管理事件處理
+    const setupManageListeners = (type) => {
+        const btn = document.getElementById(`${type}-manage-btn`);
+        const closeBtn = document.getElementById(`${type}-manage-close`);
+        const toolbar = document.getElementById(`${type}-manage-toolbar`);
+        const batchDelBtn = document.getElementById(`${type}-batch-del`);
+        const countDisplay = document.getElementById(`${type}-selected-count`);
+
+        if (!btn) return;
+
+        btn.onclick = () => {
+            manageMode[type] = true;
+            selectedIds[type].clear();
+            btn.style.display = 'none';
+            toolbar.classList.add('active');
+            if (type === 'tx') renderTransactions();
+            if (type === 'inv') renderInvestments();
+            if (type === 'debt') renderDebts();
+        };
+
+        closeBtn.onclick = () => {
+            manageMode[type] = false;
+            selectedIds[type].clear();
+            btn.style.display = 'block';
+            toolbar.classList.remove('active');
+            if (type === 'tx') renderTransactions();
+            if (type === 'inv') renderInvestments();
+            if (type === 'debt') renderDebts();
+        };
+
+        batchDelBtn.onclick = () => {
+            const count = selectedIds[type].size;
+            if (count === 0) return alert('請先勾選項目。');
+
+            let msg = `確定要批量刪除這 ${count} 項紀錄嗎？`;
+            if (type === 'inv') msg += `\n\n這將一併撤銷與這些部位相關的所有連動交易紀錄。`;
+            if (type === 'debt') msg += `\n\n這將一併撤銷與這些貸款相關的所有還款紀錄。`;
+
+            if (confirm(msg)) {
+                captureHistory();
+                const idsToDelete = Array.from(selectedIds[type]);
+
+                if (type === 'tx') {
+                    state.transactions = state.transactions.filter(t => !idsToDelete.includes(t.id));
+                } else if (type === 'inv') {
+                    state.transactions = state.transactions.filter(t => !idsToDelete.includes(t.linkId));
+                    state.investments = state.investments.filter(i => !idsToDelete.includes(i.id));
+                } else if (type === 'debt') {
+                    state.transactions = state.transactions.filter(t => !idsToDelete.includes(t.linkId));
+                    state.debts = state.debts.filter(d => !idsToDelete.includes(d.id));
+                }
+
+                saveState();
+                manageMode[type] = false;
+                selectedIds[type].clear();
+                btn.style.display = 'block';
+                toolbar.classList.remove('active');
+                if (type === 'tx') renderTransactions();
+                if (type === 'inv') renderInvestments();
+                if (type === 'debt') renderDebts();
+                updateDashboard(true);
+            }
+        };
+    };
+
+    ['tx', 'inv', 'debt'].forEach(setupManageListeners);
+
+    // [新增] 勾選點擊委派
+    document.addEventListener('click', (e) => {
+        const checkbox = e.target.closest('.custom-checkbox');
+        if (!checkbox || checkbox.classList.contains('disabled')) return;
+
+        const id = checkbox.getAttribute('data-id');
+        const type = checkbox.getAttribute('data-type');
+        
+        if (selectedIds[type].has(id)) {
+            selectedIds[type].delete(id);
+            checkbox.classList.remove('checked');
+        } else {
+            selectedIds[type].add(id);
+            checkbox.classList.add('checked');
+        }
+
+        const countDisplay = document.getElementById(`${type}-selected-count`);
+        if (countDisplay) countDisplay.textContent = `已選擇 ${selectedIds[type].size} 項`;
+    });
+
     initCharts();
     updateDashboard(true);
     renderTransactions();
     renderInvestments();
     renderDebts();
     fetchPrices();
-    processAutomaticRepayments(); // [自動化] 啟動時檢查並補上遺漏的扣款紀錄
+    processAutomaticRepayments();
 
-    // [新增] 背景同步機制：每 60 秒自動更新一次全球報價，讓總覽數字隨市場波動
     setInterval(() => {
         fetchPrices();
     }, 60000);
