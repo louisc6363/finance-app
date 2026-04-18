@@ -79,7 +79,12 @@
                     <div class="card-title">💰 現金總覽</div>
                     <div class="cash-row">
                         <div class="cash-item">
-                            <div class="cash-item-label">活期存餘</div>
+                            <div class="cash-item-label">
+                                活期存餘
+                                <button id="edit-demand-btn" class="action-btn">
+                                    <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                                </button>
+                            </div>
                             <div class="cash-item-value" id="cash-demand">
                                 <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
                             </div>
@@ -87,7 +92,7 @@
                         <div class="cash-item">
                             <div class="cash-item-label">
                                 備用金 (Fixed Cash)
-                                <button id="edit-reserve-btn" class="action-btn" style="padding:2px 10px; font-size:0.72rem; border-radius:12px; border:1px solid rgba(255,255,255,0.2); width:auto; height:24px; margin-left:8px;">
+                                <button id="edit-reserve-btn" class="action-btn">
                                     <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
                                 </button>
                             </div>
@@ -98,8 +103,13 @@
                     </div>
                     <div class="cash-total-row">
                         <span class="cash-total-label">現金合計</span>
-                        <div class="cash-total-value" id="cash-total">
-                            <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
+                        <div class="cash-total-value-group">
+                            <button id="cash-bridge-btn" class="action-btn">
+                                <i class="fa-solid fa-right-left"></i> 資金調度
+                            </button>
+                            <div class="cash-total-value" id="cash-total">
+                                <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

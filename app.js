@@ -559,38 +559,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('click', (e) => {
-        if (e.target.closest('#edit-cash-btn')) {
-            let currentCash = state.baseCash;
-            let result = prompt("請輸入您目前擁有的現金/銀行存款總餘額 (NT$): \n(這筆資金將會構成總資產的基準)", currentCash);
+        // [1] 設定活期期初金額
+        if (e.target.closest('#edit-demand-btn')) {
+            const data = getCalculatedData();
+            let currentDemand = data.demandDeposit;
+            let result = prompt(`【設定期初活期金額】\n\n此操作將校準您的起始資金點，會影響總資產與淨值。\n(目前計算值: ${currentDemand.toLocaleString()})\n\n請輸入您目前實際的「活期存餘」金額 (NT$):`, currentDemand);
+            
             if (result !== null && !isNaN(parseFloat(result))) {
+                const targetDemand = parseFloat(result);
+                // 核心邏輯：修正 baseCash 使得計算結果符合輸入
+                // 活期 = baseCash + 交易累積 - reserveCash
+                // baseCash = 活期 - 交易累積 + reserveCash
+                const cumulativeSurplus = data.demandDeposit - state.baseCash + (state.reserveCash || 0);
+                const newBaseCash = targetDemand - cumulativeSurplus + (state.reserveCash || 0);
+                
                 captureHistory();
-                const diff = parseFloat(result) - state.baseCash;
-                addLog('system', 'balance', `手動調整現金基準餘額為 NT$ ${parseFloat(result).toLocaleString()}`, diff);
-                state.baseCash = parseFloat(result);
+                addLog('system', 'init', `校準期初活期金額為 NT$ ${targetDemand.toLocaleString()}`, targetDemand - currentDemand);
+                state.baseCash = newBaseCash;
                 saveState();
             }
         }
         
+        // [2] 設定備用金期初金額
         if (e.target.closest('#edit-reserve-btn')) {
             let currentReserve = state.reserveCash || 0;
-            let result = prompt(`⚠️ 注意：此操作代表您在銀行實際移動了資金，將改變備用金水位。\n\n調整後「活期存餘」將自動重算。\n\n請輸入新的「備用金 (Fixed Cash)」總餘額 (NT$):`, currentReserve);
+            let result = prompt(`【設定期初備用金金額】\n\n此操作將直接設定您的備用金起始水位。\n(目前值: ${currentReserve.toLocaleString()})\n\n請輸入您目前實際的「備用金 (Fixed Cash)」金額 (NT$):`, currentReserve);
             
-            if (result !== null && !isNaN(parseFloat(result))) {
-                const newReserve = parseFloat(result);
-                const diff = newReserve - currentReserve;
-                if (diff === 0) return;
-                
-                const data = getCalculatedData();
-                const currentDemand = data.demandDeposit;
-                const newDemand = currentDemand - diff;
-                
-                const confirmed = confirm(`請確認資金流動：\n\n備用金將從 ${currentReserve.toLocaleString()} 調整為 ${newReserve.toLocaleString()}\n活期存餘將自動結算為 ${newDemand.toLocaleString()}\n\n確認執行？`);
-                
-                if (confirmed) {
-                    captureHistory();
-                    addLog('system', 'balance', `調整備用金總額為 NT$ ${newReserve.toLocaleString()}`, diff);
-                    state.reserveCash = newReserve;
-                    saveState();
+            if (result !== null && !isNaN(parseFloat(result)) && parseFloat(result) >= 0) {
+                const targetReserve = parseFloat(result);
+                captureHistory();
+                addLog('system', 'init', `校準期初備用金金額為 NT$ ${targetReserve.toLocaleString()}`, targetReserve - currentReserve);
+                state.reserveCash = targetReserve;
+                saveState();
+            }
+        }
+
+        // [3] 資金調度橋樑 (Transfer Bridge)
+        if (e.target.closest('#cash-bridge-btn')) {
+            const data = getCalculatedData();
+            const choice = prompt(`【資金調度橋樑】\n\n請選擇調度方向：\n1. 活期 → 備用金 (存入)\n2. 備用金 → 活期 (提領)\n\n(請輸入數字 1 或 2)`);
+            
+            if (choice === '1') {
+                const amountStr = prompt(`【活期 → 備用金】\n目前活期餘額: ${data.demandDeposit.toLocaleString()}\n\n請輸入要挪移的金額:`);
+                if (amountStr !== null && !isNaN(parseFloat(amountStr))) {
+                    const amount = parseFloat(amountStr);
+                    if (amount > data.demandDeposit) {
+                        alert(`❌ 調度失敗：活期餘額不足 (餘額: ${data.demandDeposit.toLocaleString()})`);
+                    } else if (amount > 0) {
+                        captureHistory();
+                        addLog('system', 'transfer', `資金調度：活期轉入備用金`, 0);
+                        state.reserveCash += amount;
+                        saveState();
+                        alert(`✅ 已將 ${amount.toLocaleString()} 撥入備用金。`);
+                    }
+                }
+            } else if (choice === '2') {
+                const amountStr = prompt(`【備用金 → 活期】\n目前備用金餘額: ${data.reserveCash.toLocaleString()}\n\n請輸入要挪移的金額:`);
+                if (amountStr !== null && !isNaN(parseFloat(amountStr))) {
+                    const amount = parseFloat(amountStr);
+                    if (amount > data.reserveCash) {
+                        alert(`❌ 調度失敗：備用金餘額不足 (餘額: ${data.reserveCash.toLocaleString()})`);
+                    } else if (amount > 0) {
+                        captureHistory();
+                        addLog('system', 'transfer', `資金調度：備用金轉回活期`, 0);
+                        state.reserveCash -= amount;
+                        saveState();
+                        alert(`✅ 已將 ${amount.toLocaleString()} 撥回活期存餘。`);
+                    }
                 }
             }
         }
