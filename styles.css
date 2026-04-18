@@ -631,6 +631,152 @@ header {
     font-size: 0.8rem;
 }
 
+/* ====================================================
+   資金調度橋樑 Modal 專屬樣式
+   ==================================================== */
+.bridge-card {
+    max-width: 500px !important;
+    width: 90%;
+}
+
+.bridge-visual-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0;
+    position: relative;
+    gap: 15px;
+}
+
+.bridge-bucket {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.bridge-bucket.active-source {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.bridge-bucket.active-target {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.bucket-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.bucket-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.bucket-balance {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* 旋轉箭頭 */
+.bridge-arrow-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#bridge-reverse-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#bridge-reverse-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+}
+
+#bridge-reverse-btn i {
+    font-size: 1.2rem;
+    transition: transform 0.4s ease;
+}
+
+.reflect-y {
+    transform: rotate(180deg);
+}
+
+/* 金額輸入與快選 */
+.quick-pills {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.pill {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* 預覽區 */
+.bridge-preview-area {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+
+.preview-item:not(:last-child) {
+    margin-bottom: 8px;
+}
+
+.preview-item strong {
+    color: var(--text-main);
+}
+
+.bridge-submit-btn {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary), #a855f7) !important;
+}
+
 /* 響應式調整 */
 @media (max-width: 1100px) {
     .hero-banner { padding: 24px 28px; margin: 0 20px 20px; }

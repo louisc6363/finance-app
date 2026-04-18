@@ -593,45 +593,121 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // [3] 資金調度橋樑 (Transfer Bridge)
+        // [3] 資金調度橋樑 (Visual Modal)
         if (e.target.closest('#cash-bridge-btn')) {
-            const data = getCalculatedData();
-            const choice = prompt(`【資金調度橋樑】\n\n請選擇調度方向：\n1. 活期 → 備用金 (存入)\n2. 備用金 → 活期 (提領)\n\n(請輸入數字 1 或 2)`);
-            
-            if (choice === '1') {
-                const amountStr = prompt(`【活期 → 備用金】\n目前活期餘額: ${data.demandDeposit.toLocaleString()}\n\n請輸入要挪移的金額:`);
-                if (amountStr !== null && !isNaN(parseFloat(amountStr))) {
-                    const amount = parseFloat(amountStr);
-                    if (amount > data.demandDeposit) {
-                        alert(`❌ 調度失敗：活期餘額不足 (餘額: ${data.demandDeposit.toLocaleString()})`);
-                    } else if (amount > 0) {
-                        captureHistory();
-                        addLog('system', 'transfer', `資金調度：由活期挪移至備用金`, 0);
-                        // 挪移邏輯：活期期初減少, 備用金期初增加 (總額不變)
-                        state.baseCash -= amount;
-                        state.reserveCash += amount;
-                        saveState();
-                        alert(`✅ 已將 ${amount.toLocaleString()} 撥入備用金。`);
-                    }
-                }
-            } else if (choice === '2') {
-                const amountStr = prompt(`【備用金 → 活期】\n目前備用金餘額: ${data.reserveCash.toLocaleString()}\n\n請輸入要挪移的金額:`);
-                if (amountStr !== null && !isNaN(parseFloat(amountStr))) {
-                    const amount = parseFloat(amountStr);
-                    if (amount > data.reserveCash) {
-                        alert(`❌ 調度失敗：備用金餘額不足 (餘額: ${data.reserveCash.toLocaleString()})`);
-                    } else if (amount > 0) {
-                        captureHistory();
-                        addLog('system', 'transfer', `資金調度：由備用金挪回活期`, 0);
-                        // 挪移邏輯：備用金期初減少, 活期期初增加 (總額不變)
-                        state.reserveCash -= amount;
-                        state.baseCash += amount;
-                        saveState();
-                        alert(`✅ 已將 ${amount.toLocaleString()} 撥回活期存餘。`);
-                    }
-                }
-            }
+            openBridgeModal();
         }
+    });
+
+    // --- 資金調度橋樑專屬邏輯 ---
+    let bridgeState = {
+        direction: 'demand_to_reserve', // or 'reserve_to_demand'
+        sourceBalance: 0,
+        targetBalance: 0
+    };
+
+    const openBridgeModal = () => {
+        const modal = document.getElementById('cash-bridge-modal');
+        const data = getCalculatedData();
+        
+        bridgeState.direction = 'demand_to_reserve';
+        bridgeState.demandBalance = data.demandDeposit;
+        bridgeState.reserveBalance = data.reserveCash;
+        
+        document.getElementById('bridge-amount').value = '';
+        document.getElementById('bridge-arrow-icon').classList.remove('reflect-y');
+        
+        updateBridgeUI();
+        modal.classList.add('active');
+    };
+
+    const updateBridgeUI = () => {
+        const isD2R = bridgeState.direction === 'demand_to_reserve';
+        const sourceName = isD2R ? '活期存餘' : '備用金';
+        const targetName = isD2R ? '備用金' : '活期存餘';
+        
+        bridgeState.sourceBalance = isD2R ? bridgeState.demandBalance : bridgeState.reserveBalance;
+        bridgeState.targetBalance = isD2R ? bridgeState.reserveBalance : bridgeState.demandBalance;
+
+        document.getElementById('bridge-source-name').textContent = sourceName;
+        document.getElementById('bridge-target-name').textContent = targetName;
+        document.getElementById('bridge-source-balance').textContent = `NT$ ${bridgeState.sourceBalance.toLocaleString()}`;
+        document.getElementById('bridge-target-balance').textContent = `NT$ ${bridgeState.targetBalance.toLocaleString()}`;
+        
+        // 切換高亮
+        const sBucket = document.getElementById('bridge-source-bucket');
+        const tBucket = document.getElementById('bridge-target-bucket');
+        sBucket.className = 'bridge-bucket source active-source';
+        tBucket.className = 'bridge-bucket target active-target';
+
+        calculateBridgePreview();
+    };
+
+    const calculateBridgePreview = () => {
+        const amount = parseFloat(document.getElementById('bridge-amount').value) || 0;
+        const sourceAfter = Math.max(0, bridgeState.sourceBalance - amount);
+        const targetAfter = bridgeState.targetBalance + amount;
+
+        document.getElementById('preview-source-after').textContent = `NT$ ${sourceAfter.toLocaleString()}`;
+        document.getElementById('preview-target-after').textContent = `NT$ ${targetAfter.toLocaleString()}`;
+        
+        const confirmBtn = document.getElementById('bridge-confirm-btn');
+        if (amount > bridgeState.sourceBalance || amount <= 0) {
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = '0.5';
+        } else {
+            confirmBtn.disabled = false;
+            confirmBtn.style.opacity = '1';
+        }
+    };
+
+    // 事件監聽：反轉按鈕
+    document.getElementById('bridge-reverse-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        bridgeState.direction = bridgeState.direction === 'demand_to_reserve' ? 'reserve_to_demand' : 'demand_to_reserve';
+        document.getElementById('bridge-arrow-icon').classList.toggle('reflect-y');
+        updateBridgeUI();
+    });
+
+    // 事件監聽：輸入
+    document.getElementById('bridge-amount')?.addEventListener('input', calculateBridgePreview);
+
+    // 事件監聽：快選 Pills
+    document.querySelectorAll('.pill').forEach(pill => {
+        pill.onclick = () => {
+            const pct = parseFloat(pill.getAttribute('data-pct'));
+            document.getElementById('bridge-amount').value = Math.floor(bridgeState.sourceBalance * pct);
+            calculateBridgePreview();
+        };
+    });
+
+    // 事件監聽：取消與關閉
+    const closeBridge = () => document.getElementById('cash-bridge-modal').classList.remove('active');
+    document.getElementById('bridge-close-btn')?.addEventListener('click', closeBridge);
+    document.getElementById('bridge-cancel-btn')?.addEventListener('click', closeBridge);
+
+    // 事件監聽：確認提交
+    document.getElementById('bridge-modal-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const amount = parseFloat(document.getElementById('bridge-amount').value);
+        if (amount > bridgeState.sourceBalance || amount <= 0) return;
+
+        captureHistory();
+        const isD2R = bridgeState.direction === 'demand_to_reserve';
+        
+        if (isD2R) {
+            addLog('system', 'transfer', `資金調度：由活期挪移至備用金`, 0);
+            state.baseCash -= amount;
+            state.reserveCash += amount;
+        } else {
+            addLog('system', 'transfer', `資金調度：由備用金挪回活期`, 0);
+            state.reserveCash -= amount;
+            state.baseCash += amount;
+        }
+
+        saveState();
+        closeBridge();
+        alert(`✅ 成功調度 NT$ ${amount.toLocaleString()}`);
     });
 
     document.getElementById('toggle-invest-pnl')?.addEventListener('change', () => {

@@ -549,6 +549,63 @@
         </div>
     </div>
 
+    <!-- 資金調度橋樑 Modal -->
+    <div id="cash-bridge-modal" class="modal-overlay">
+        <div class="card glass modal-card bridge-card">
+            <div class="modal-header">
+                <h2>資金調度橋樑</h2>
+                <button class="close-modal" id="bridge-close-btn">&times;</button>
+            </div>
+            
+            <div class="bridge-visual-area">
+                <div class="bridge-bucket source" id="bridge-source-bucket">
+                    <span class="bucket-label">轉出帳戶</span>
+                    <div class="bucket-name" id="bridge-source-name">活期存餘</div>
+                    <div class="bucket-balance" id="bridge-source-balance">NT$ 0</div>
+                </div>
+                
+                <div class="bridge-arrow-area">
+                    <button id="bridge-reverse-btn" title="反轉方向" type="button">
+                        <i class="fa-solid fa-right-long" id="bridge-arrow-icon"></i>
+                    </button>
+                </div>
+                
+                <div class="bridge-bucket target" id="bridge-target-bucket">
+                    <span class="bucket-label">轉入帳戶</span>
+                    <div class="bucket-name" id="bridge-target-name">備用金</div>
+                    <div class="bucket-balance" id="bridge-target-balance">NT$ 0</div>
+                </div>
+            </div>
+
+            <form id="bridge-modal-form" style="margin-top:24px;">
+                <div class="form-group">
+                    <label>調度金額 (Amount)</label>
+                    <input type="number" id="bridge-amount" placeholder="請輸入要撥移的金額" required min="0" step="any">
+                    <div class="quick-pills">
+                        <button type="button" class="pill" data-pct="0.5">50%</button>
+                        <button type="button" class="pill" data-pct="1">全部 (Max)</button>
+                    </div>
+                </div>
+
+                <div class="bridge-preview-area">
+                    <div class="preview-item">
+                        <span>預計轉出後餘額:</span>
+                        <strong id="preview-source-after">NT$ 0</strong>
+                    </div>
+                    <div class="preview-item">
+                        <span>預計轉入後餘額:</span>
+                        <strong id="preview-target-after">NT$ 0</strong>
+                    </div>
+                </div>
+
+                <div class="modal-buttons" style="display:flex; gap:15px; margin-top:20px;">
+                    <button type="button" class="submit-btn" id="bridge-cancel-btn" style="background: rgba(255,255,255,0.08); color: var(--text-main);">取消操作</button>
+                    <button type="submit" class="submit-btn bridge-submit-btn" id="bridge-confirm-btn">確認執行調度</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js?v=4"></script>
