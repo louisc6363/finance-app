@@ -469,3 +469,38 @@
     gap: 10px;
     margin-left: auto;
 }
+
+/* --- 帳戶管理 (Accounts) 專屬樣式 --- */
+.account-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.account-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.5);
+}
+
+.account-item:hover .item-actions {
+    opacity: 1;
+}
+
+.account-icon-badge {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}

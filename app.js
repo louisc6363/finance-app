@@ -178,6 +178,24 @@ document.addEventListener('DOMContentLoaded', () => {
         { code: "826", name: "樂天國際商業銀行" }
     ];
 
+    // 電子支付與現金字典 (帳戶管理用)
+    const walletDictionary = [
+        { code: "LP", name: "LINE Pay / iPASS MONEY" },
+        { code: "JKO", name: "街口支付" },
+        { code: "PP", name: "全支付 (PlusPay)" },
+        { code: "TP", name: "台灣Pay (Taiwan Pay)" },
+        { code: "EW", name: "您遊付 (EasyWallet)" },
+        { code: "IP", name: "icash Pay" },
+        { code: "PI", name: "Pi 拍錢包" },
+        { code: "OP", name: "歐付寶 (O'Pay)" },
+        { code: "GP", name: "Google Pay" },
+        { code: "AP", name: "Apple Pay" },
+        { code: "CASH", name: "實體現金 / 錢包" }
+    ];
+
+    // 帳戶 + 電子錢包合并字典
+    const providerDictionary = [...bankDictionary, ...walletDictionary];
+
     const setupAutocomplete = (inputId, suggestionId, dataProvider) => {
         const input = document.getElementById(inputId);
         const suggestionBox = document.getElementById(suggestionId);
@@ -229,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupAutocomplete('d-bank', 'bank-suggestions', bankDictionary);
     setupAutocomplete('d-repay-bank', 'repay-bank-suggestions', bankDictionary);
+    setupAutocomplete('ac-provider', 'ac-provider-suggestions', providerDictionary);
 
     // --- 全局數值運算工具 ---
     const calculateAPR = (P, M, N_years) => {
@@ -463,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.investments) state.investments = [];
     if (!state.debts) state.debts = [];
     if (state.baseCash === undefined) state.baseCash = 0;
+    if (!state.accounts) state.accounts = []; // 帳戶管理欄位
 
     // --- Data Maintenance: Force Purge 170k Test Data ---
     if (!localStorage.getItem('repair_170k_v2')) {
@@ -1624,6 +1644,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvestments();
     renderDebts();
     renderHistory();
+    renderAccounts();
     fetchPrices();
     processAutomaticRepayments();
 
@@ -1631,3 +1652,108 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchPrices();
     }, 60000);
 });
+
+// ============================================================
+// === 帳戶管理模組 (Account Management Module) - 獨立區塊 ===
+// ============================================================
+
+function renderAccounts() {
+    const listDiv = document.getElementById('account-list');
+    const totalDisplay = document.getElementById('ac-total-display');
+    if (!listDiv) return;
+
+    const accounts = JSON.parse(localStorage.getItem('financeStateV10'))?.accounts || [];
+
+    listDiv.innerHTML = '';
+
+    if (accounts.length === 0) {
+        listDiv.innerHTML = `
+            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                <i class="fa-solid fa-building-columns" style="font-size:2.5rem; margin-bottom:15px; opacity:0.3;"></i>
+                <p>尚無任何帳戶。<br>請至左方表單新增您的第一個帳戶。</p>
+            </div>`;
+        if (totalDisplay) totalDisplay.textContent = '總餘額 NT$ 0';
+        return;
+    }
+
+    const typeConfig = {
+        bank:   { icon: 'fa-building-columns', color: '#3b82f6', label: '銀行' },
+        wallet: { icon: 'fa-mobile-screen-button', color: '#10b981', label: '電子錢包' },
+        cash:   { icon: 'fa-wallet', color: '#f59e0b', label: '現金' }
+    };
+
+    let totalBalance = 0;
+
+    accounts.forEach(acc => {
+        const cfg = typeConfig[acc.type] || typeConfig.cash;
+        const bal = Number(acc.balance) || 0;
+        totalBalance += bal;
+
+        const item = document.createElement('div');
+        item.className = 'account-item';
+        item.innerHTML = `
+            <div style="display:flex; align-items:center; gap:14px; flex:1;">
+                <div class="account-icon-badge" style="background:${cfg.color}22; color:${cfg.color};">
+                    <i class="fa-solid ${cfg.icon}"></i>
+                </div>
+                <div>
+                    <div class="item-name" style="font-size:1rem;">${acc.name}</div>
+                    <div class="item-sub">${acc.provider || cfg.label}</div>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div class="item-value positive" style="font-size:1.1rem;">NT$ ${bal.toLocaleString()}</div>
+                <div class="item-sub">${cfg.label}</div>
+            </div>
+            <div class="item-actions" style="margin-left:10px;">
+                <button class="action-btn del-acc-btn" data-id="${acc.id}" title="刪除帳戶">
+                    <i class="fa-solid fa-trash" style="pointer-events:none;"></i>
+                </button>
+            </div>`;
+        listDiv.appendChild(item);
+    });
+
+    if (totalDisplay) totalDisplay.textContent = `總餘額 NT$ ${totalBalance.toLocaleString()}`;
+
+    // 綁定刪除按鈕
+    listDiv.querySelectorAll('.del-acc-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const state = JSON.parse(localStorage.getItem('financeStateV10'));
+            const acc = state.accounts.find(a => a.id === id);
+            if (!acc) return;
+            if (confirm(`確定刪除帳戶「${acc.name}」嗎？`)) {
+                state.accounts = state.accounts.filter(a => a.id !== id);
+                localStorage.setItem('financeStateV10', JSON.stringify(state));
+                renderAccounts();
+            }
+        });
+    });
+}
+
+// 帳戶表單提交
+(function setupAccountForm() {
+    const form = document.getElementById('account-form');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const state = JSON.parse(localStorage.getItem('financeStateV10')) || {};
+        if (!state.accounts) state.accounts = [];
+
+        const providerRaw = document.getElementById('ac-provider').value.trim();
+
+        const newAcc = {
+            id: 'acc-' + Date.now(),
+            name: document.getElementById('ac-name').value.trim(),
+            type: document.getElementById('ac-type').value,
+            provider: providerRaw || '—',
+            balance: parseFloat(document.getElementById('ac-balance').value) || 0
+        };
+
+        state.accounts.push(newAcc);
+        localStorage.setItem('financeStateV10', JSON.stringify(state));
+        form.reset();
+        renderAccounts();
+    });
+})();

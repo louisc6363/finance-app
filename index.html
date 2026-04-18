@@ -24,6 +24,7 @@
             </div>
             <ul class="nav-links">
                 <li class="active"><a href="#" data-page="dashboard"><i class="fa-solid fa-border-all"></i> 總覽</a></li>
+                <li><a href="#" data-page="accounts"><i class="fa-solid fa-building-columns"></i> 帳戶管理</a></li>
                 <li><a href="#" data-page="cashflow"><i class="fa-solid fa-money-bill-transfer"></i> 收支分析</a></li>
                 <li><a href="#" data-page="investments"><i class="fa-solid fa-chart-pie"></i> 投資組合</a></li>
                 <li><a href="#" data-page="liabilities"><i class="fa-solid fa-credit-card"></i> 負債管理</a></li>
@@ -425,6 +426,56 @@
     </div>
 
     </div>
+
+    <!-- 帳戶管理 Section -->
+    <section id="accounts" class="page-section">
+        <header>
+            <div class="greeting">
+                <h2>帳戶與錢包管理</h2>
+                <p>集中管理您的所有銀行帳戶與電子支付錢包。</p>
+            </div>
+        </header>
+        <div class="module-container">
+            <!-- 左：新增表單 -->
+            <div class="card glass form-card">
+                <h3>新增帳戶 / 電子錢包</h3>
+                <form id="account-form">
+                    <div class="form-group">
+                        <label>帳戶名稱</label>
+                        <input type="text" id="ac-name" placeholder="例如：薪資戶、日常支出帳戶" required>
+                    </div>
+                    <div class="form-group">
+                        <label>帳戶類別</label>
+                        <select id="ac-type">
+                            <option value="bank">銀行帳戶 (Bank)</option>
+                            <option value="wallet">電子錢包 (E-Wallet)</option>
+                            <option value="cash">實體現金 (Cash)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="position:relative;">
+                        <label>銀行 / 支付平台（支援模糊搜尋）</label>
+                        <input type="text" id="ac-provider" placeholder="輸入關鍵字，如：013、街口、LINE..." autocomplete="off">
+                        <ul id="ac-provider-suggestions" class="suggestions-list" style="display:none;"></ul>
+                    </div>
+                    <div class="form-group">
+                        <label>初始餘額 (NT$)</label>
+                        <input type="number" id="ac-balance" placeholder="0" min="0">
+                    </div>
+                    <button type="submit" class="submit-btn" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);">新增帳戶</button>
+                </form>
+            </div>
+            <!-- 右：帳戶清單 -->
+            <div class="card glass list-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="margin:0;">我的帳戶清單</h3>
+                    <div id="ac-total-display" style="font-size:1rem; font-weight:700; color:var(--primary);">總餘額 NT$ 0</div>
+                </div>
+                <div id="account-list">
+                    <!-- JS 動態生成 -->
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
