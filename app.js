@@ -136,65 +136,73 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    const bankDictionary = [
-        { code: "004", name: "臺灣銀行" },
-        { code: "005", name: "臺灣土地銀行" },
-        { code: "006", name: "合作金庫商業銀行" },
-        { code: "007", name: "第一商業銀行" },
-        { code: "008", name: "華南商業銀行" },
-        { code: "009", name: "彰化商業銀行" },
-        { code: "011", name: "上海商業儲蓄銀行" },
-        { code: "012", name: "台北富邦商業銀行" },
-        { code: "013", name: "國泰世華商業銀行" },
-        { code: "016", name: "高雄銀行" },
-        { code: "017", name: "兆豐國際商業銀行" },
-        { code: "018", name: "農業金庫" },
-        { code: "021", name: "花旗(台灣)商業銀行" },
-        { code: "039", name: "澳商澳盛銀行" },
-        { code: "048", name: "王道商業銀行" },
-        { code: "050", name: "臺灣中小企業銀行" },
-        { code: "052", name: "渣打國際商業銀行" },
-        { code: "053", name: "台中商業銀行" },
-        { code: "054", name: "京城商業銀行" },
-        { code: "101", name: "瑞興商業銀行" },
-        { code: "102", name: "華泰商業銀行" },
-        { code: "103", name: "臺灣新光商業銀行" },
-        { code: "108", name: "陽信商業銀行" },
-        { code: "118", name: "板信商業銀行" },
-        { code: "147", name: "三信商業銀行" },
-        { code: "700", name: "中華郵政" },
-        { code: "803", name: "聯邦商業銀行" },
-        { code: "805", name: "遠東國際商業銀行" },
-        { code: "806", name: "元大商業銀行" },
-        { code: "807", name: "永豐商業銀行" },
-        { code: "808", name: "玉山商業銀行" },
-        { code: "809", name: "凱基商業銀行" },
-        { code: "810", name: "星展(台灣)商業銀行" },
-        { code: "812", name: "台新國際商業銀行" },
-        { code: "816", name: "安泰商業銀行" },
-        { code: "822", name: "中國信託商業銀行" },
-        { code: "823", name: "將來商業銀行" },
-        { code: "824", name: "連線商業銀行 (LINE Bank)" },
-        { code: "826", name: "樂天國際商業銀行" }
+        const bankDictionary = [
+        { code: "004", name: "臺灣銀行", domain: "bot.com.tw" },
+        { code: "005", name: "臺灣土地銀行", domain: "landbank.com.tw" },
+        { code: "006", name: "合作金庫商業銀行", domain: "tcb-bank.com.tw" },
+        { code: "007", name: "第一商業銀行", domain: "firstbank.com.tw" },
+        { code: "008", name: "華南商業銀行", domain: "hncb.com.tw" },
+        { code: "009", name: "彰化商業銀行", domain: "bankchb.com" },
+        { code: "011", name: "上海商業儲蓄銀行", domain: "scsb.com.tw" },
+        { code: "012", name: "台北富邦商業銀行", domain: "fubon.com" },
+        { code: "013", name: "國泰世華商業銀行", domain: "cathaybk.com.tw" },
+        { code: "016", name: "高雄銀行", domain: "bok.com.tw" },
+        { code: "017", name: "兆豐國際商業銀行", domain: "megabank.com.tw" },
+        { code: "018", name: "農業金庫", domain: "agribank.com.tw" },
+        { code: "021", name: "花旗(台灣)商業銀行", domain: "citibank.com.tw" },
+        { code: "039", name: "澳商澳盛銀行", domain: "anz.com" },
+        { code: "048", name: "王道商業銀行", domain: "o-bank.com" },
+        { code: "050", name: "臺灣中小企業銀行", domain: "tbb.com.tw" },
+        { code: "052", name: "渣打國際商業銀行", domain: "sc.com" },
+        { code: "053", name: "台中商業銀行", domain: "tcbbank.com.tw" },
+        { code: "054", name: "京城商業銀行", domain: "ktb.com.tw" },
+        { code: "101", name: "瑞興商業銀行", domain: "taipeistarbank.com.tw" },
+        { code: "102", name: "華泰商業銀行", domain: "hwataibank.com.tw" },
+        { code: "103", name: "臺灣新光商業銀行", domain: "skbank.com.tw" },
+        { code: "108", name: "陽信商業銀行", domain: "sunnybank.com.tw" },
+        { code: "118", name: "板信商業銀行", domain: "bop.com.tw" },
+        { code: "147", name: "三信商業銀行", domain: "cotabank.com.tw" },
+        { code: "700", name: "中華郵政", domain: "post.gov.tw" },
+        { code: "803", name: "聯邦商業銀行", domain: "ubot.com.tw" },
+        { code: "805", name: "遠東國際商業銀行", domain: "feib.com.tw" },
+        { code: "806", name: "元大商業銀行", domain: "yuantabank.com.tw" },
+        { code: "807", name: "永豐商業銀行", domain: "bank.sinopac.com" },
+        { code: "808", name: "玉山商業銀行", domain: "esunbank.com.tw" },
+        { code: "809", name: "凱基商業銀行", domain: "kgibank.com.tw" },
+        { code: "810", name: "星展(台灣)商業銀行", domain: "dbs.com.tw" },
+        { code: "812", name: "台新國際商業銀行", domain: "taishinbank.com.tw" },
+        { code: "816", name: "安泰商業銀行", domain: "enttiebank.com.tw" },
+        { code: "822", name: "中國信託商業銀行", domain: "ctbcbank.com" },
+        { code: "823", name: "將來商業銀行", domain: "nextbank.com.tw" },
+        { code: "824", name: "連線商業銀行 (LINE Bank)", domain: "linebank.com.tw" },
+        { code: "826", name: "樂天國際商業銀行", domain: "rakuten-bank.com.tw" }
     ];
 
     // 電子支付字典 (屬台灣常用支付)
-    const walletDictionary = [
-        { code: "LP",   name: "LINE Pay / iPASS MONEY" },
-        { code: "JKO",  name: "街口支付" },
-        { code: "PP",   name: "全支付 (PlusPay)" },
-        { code: "TP",   name: "台灣Pay (Taiwan Pay)" },
-        { code: "EW",   name: "您遊付 (EasyWallet)" },
-        { code: "IP",   name: "icash Pay" },
-        { code: "PI",   name: "Pi 拍錢包" },
-        { code: "OP",   name: "歐付寶 (O'Pay)" },
-        { code: "GP",   name: "Google Pay" },
-        { code: "AP",   name: "Apple Pay" },
+        const walletDictionary = [
+        { code: "LP",   name: "LINE Pay / iPASS MONEY", domain: "line.me" },
+        { code: "JKO",  name: "街口支付", domain: "jkopay.com" },
+        { code: "PP",   name: "全支付 (PlusPay)", domain: "pxpayplus.com" },
+        { code: "TP",   name: "台灣Pay (Taiwan Pay)", domain: "taiwanpay.com.tw" },
+        { code: "EW",   name: "悠遊付 (EasyWallet)", domain: "easycard.com.tw" },
+        { code: "IP",   name: "icash Pay", domain: "icashpay.com.tw" },
+        { code: "PI",   name: "Pi 拍錢包", domain: "piapp.com.tw" },
+        { code: "OP",   name: "歐付寶 (O'Pay)", domain: "opay.tw" },
+        { code: "GP",   name: "Google Pay", domain: "pay.google.com" },
+        { code: "AP",   name: "Apple Pay", domain: "apple.com" },
         { code: "CASH", name: "實體現金 / 錢包" }
     ];
 
+    
     // 銀行 + 電子錢包字典 (一集式，從 acproviderDictionary 引用)
     const providerDictionary = [...bankDictionary, ...walletDictionary];
+
+    const getProviderLogo = (name) => {
+        const item = providerDictionary.find(p => p.name === name || p.code === name);
+        if (item && item.domain) return `https://www.google.com/s2/favicons?sz=64&domain=${item.domain}`;
+        return null;
+    };
+
 
     const setupAutocomplete = (inputId, suggestionId, dataProvider) => {
         const input = document.getElementById(inputId);
@@ -2118,121 +2126,258 @@ const ACCOUNT_PROVIDERS = {
     }
 })();
 
-// --- 渲染帳戶清單 ---
-function renderAccounts() {
-    const listDiv = document.getElementById('account-list');
-    const totalDisplay = document.getElementById('ac-total-display');
-    if (!listDiv) return;
 
-    const accounts = JSON.parse(localStorage.getItem('financeStateV10'))?.accounts || [];
-    listDiv.innerHTML = '';
-
-    if (accounts.length === 0) {
-        listDiv.innerHTML = `
-            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
-                <i class="fa-solid fa-building-columns" style="font-size:2.5rem; margin-bottom:15px; opacity:0.3;"></i>
-                <p>尚無任何帳戶。<br>請至左方表單新增您的第一個帳戶。</p>
-            </div>`;
-        if (totalDisplay) totalDisplay.textContent = '總餘額 NT$ 0';
-        return;
-    }
-
-    const allProviders = Object.values(ACCOUNT_PROVIDERS).flat();
-
-    let totalBalance = 0;
-    accounts.forEach(acc => {
-        const providerInfo = allProviders.find(p => p.name === acc.provider || p.code === acc.provider);
-        const color = providerInfo?.color || '#6366f1';
-        const bal = Number(acc.balance) || 0;
-        totalBalance += bal;
-
-        const typeLabel = { bank: '銀行', wallet: '電子錢包', cash: '現金' }[acc.type] || acc.type;
-
-        const item = document.createElement('div');
-        item.className = 'account-item';
-        item.innerHTML = `
-            <div style="display:flex; align-items:center; gap:14px; flex:1;">
-                <div class="account-icon-badge" style="background:${color}22; color:${color}; font-size:0.85rem; font-weight:700;">
-                    ${acc.provider ? acc.provider.substring(0,2) : typeLabel.substring(0,1)}
-                </div>
-                <div>
-                    <div class="item-name" style="font-size:1rem;">${acc.name}</div>
-                    <div class="item-sub">${acc.provider || typeLabel}</div>
-                </div>
-            </div>
-            <div style="text-align:right;">
-                <div class="item-value positive" style="font-size:1.1rem;">NT$ ${bal.toLocaleString()}</div>
-                <div class="item-sub">${typeLabel}</div>
-            </div>
-            <div class="item-actions" style="margin-left:10px;">
-                <button class="action-btn del-acc-btn" data-id="${acc.id}" title="刪除帳戶">
-                    <i class="fa-solid fa-trash" style="pointer-events:none;"></i>
-                </button>
-            </div>`;
-        listDiv.appendChild(item);
+    // 帳戶表單 UI 更新：Logo 預覽
+    document.getElementById('ac-picker-trigger')?.addEventListener('click', () => {
+        setTimeout(() => {
+            const interval = setInterval(() => {
+                const searchItems = document.querySelectorAll('.picker-search-item');
+                if (searchItems.length > 0) {
+                    searchItems.forEach(item => {
+                        item.addEventListener('click', () => {
+                            const selectedName = item.querySelector('.ps-name')?.textContent || item.querySelector('.picker-card-name')?.textContent;
+                            if (selectedName) updateAccountLogoPreview(selectedName);
+                        });
+                    });
+                    clearInterval(interval);
+                }
+                const cards = document.querySelectorAll('.picker-card');
+                if (cards.length > 0) {
+                    cards.forEach(card => {
+                        card.addEventListener('click', () => {
+                            const selectedName = card.querySelector('.picker-card-name')?.textContent;
+                            if (selectedName) updateAccountLogoPreview(selectedName);
+                        });
+                    });
+                    clearInterval(interval);
+                }
+            }, 500);
+        }, 100);
     });
 
-    if (totalDisplay) totalDisplay.textContent = `總餘額 NT$ ${totalBalance.toLocaleString()}`;
-
-    listDiv.querySelectorAll('.del-acc-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-id');
-            const state = JSON.parse(localStorage.getItem('financeStateV10'));
-            const acc = state.accounts.find(a => a.id === id);
-            if (!acc) return;
-            if (confirm(`確定刪除帳戶「${acc.name}」嗎？`)) {
-                state.accounts = state.accounts.filter(a => a.id !== id);
-                localStorage.setItem('financeStateV10', JSON.stringify(state));
-                renderAccounts();
+    const updateAccountLogoPreview = (providerName) => {
+        const previewEl = document.getElementById('ac-icon-preview');
+        const logoUrl = getProviderLogo(providerName);
+        if (logoUrl) {
+            previewEl.innerHTML = `<img src="${logoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            const providerInfo = providerDictionary.find(p => p.name === providerName || p.code === providerName);
+            if (providerInfo) {
+                previewEl.innerHTML = `<div style="background:${providerInfo.color}22; color:${providerInfo.color}; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.8rem;">${providerInfo.name.substring(0,2)}</div>`;
+            } else {
+                previewEl.innerHTML = `<i class="fa-solid fa-building-columns" style="opacity:0.3;"></i>`;
             }
-        });
-    });
-}
+        }
+    };
 
-// --- 帳戶表單提交 ---
-(function setupAccountForm() {
-    const form = document.getElementById('account-form');
-    if (!form) return;
+    // --- 渲染帳戶清單 ---
+    function renderAccounts() {
+        const listDiv = document.getElementById('account-list');
+        const totalDisplay = document.getElementById('ac-total-display');
+        if (!listDiv) return;
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
+        const stateObj = JSON.parse(localStorage.getItem('financeStateV10')) || {};
+        const accounts = stateObj.accounts || [];
+        listDiv.innerHTML = '';
 
-        const providerName = document.getElementById('ac-provider').value.trim();
-        if (!providerName) {
-            alert('請選擇銀行或電子錢包！');
+        if (accounts.length === 0) {
+            listDiv.innerHTML = `
+                <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                    <i class="fa-solid fa-building-columns" style="font-size:2.5rem; margin-bottom:15px; opacity:0.3;"></i>
+                    <p>尚無任何帳戶。<br>請至右方表單新增您的第一個帳戶。</p>
+                </div>`;
+            if (totalDisplay) totalDisplay.textContent = `總餘額 NT$ 0`;
             return;
         }
 
-        // 根據 ACCOUNT_PROVIDERS 反推 type
-        let detectedType = 'cash';
-        for (const [tab, items] of Object.entries(ACCOUNT_PROVIDERS)) {
-            if (items.some(p => p.name === providerName || p.code === providerName)) {
-                detectedType = tab;
-                break;
+        let totalBalance = 0;
+        accounts.forEach(acc => {
+            const providerInfo = providerDictionary.find(p => p.name === acc.provider || p.code === acc.provider);
+            const color = acc.color || providerInfo?.color || '#6366f1';
+            let bal = Number(acc.balance) || 0;
+            const currency = acc.currency || 'TWD';
+            
+            // 換算總額
+            let rate = 1;
+            if (currency !== 'TWD' && stateObj.rates) {
+                rate = stateObj.rates[`TWD_${currency}`] || 1;
             }
-        }
+            if (acc.includeInAssets !== false) {
+                totalBalance += (bal * rate);
+            }
 
-        const state = JSON.parse(localStorage.getItem('financeStateV10')) || {};
-        if (!state.accounts) state.accounts = [];
+            const isInc = acc.includeInAssets !== false;
+            const typeLabel = { bank: '銀行', wallet: '電子錢包', cash: '現金' }[acc.type] || acc.type;
+            const logoUrl = getProviderLogo(acc.provider);
+            
+            let iconHtml_inner = '';
+            if (logoUrl) {
+                iconHtml_inner = `<img src="${logoUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            } else if (providerInfo) {
+                iconHtml_inner = `<div style="background:${color}22; color:${color}; font-size:0.85rem; font-weight:700; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${(acc.provider ? acc.provider.substring(0,2) : typeLabel.substring(0,1))}</div>`;
+            } else {
+                iconHtml_inner = `<i class="fa-solid fa-building-columns" style="color:${color}"></i>`;
+            }
 
-        const newAcc = {
-            id: 'acc-' + Date.now(),
-            name: document.getElementById('ac-name').value.trim(),
-            type: detectedType,
-            provider: providerName,
-            balance: parseFloat(document.getElementById('ac-balance').value) || 0
+            const item = document.createElement('div');
+            item.className = 'account-item';
+            // 當不計入資產時，顯示為半透明
+            if (!isInc) item.style.opacity = '0.6';
+            
+            // 加入識別顏色左側邊框
+            item.style.borderLeft = `4px solid ${color}`;
+            item.style.paddingLeft = '10px';
+
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; gap:14px; flex:1;">
+                    <div class="account-icon-badge" style="background:transparent; width:40px; height:40px; overflow:hidden; border-radius:50%;">
+                        ${iconHtml_inner}
+                    </div>
+                    <div>
+                        <div class="item-name" style="font-size:1.05rem; font-weight:600; color:var(--text-main);">${acc.name} ${!isInc ? '<span style="font-size:0.6rem; color:var(--text-muted); background:rgba(255,255,255,0.08); padding:2px 4px; border-radius:4px; margin-left:4px; vertical-align:middle;">不計入</span>' : ''}</div>
+                        <div class="item-sub" style="font-size:0.8rem; margin-top:4px; color:var(--text-muted);">${acc.provider || typeLabel} ${acc.remark ? ` · ${acc.remark}` : ''}</div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="item-value positive" style="font-size:1.15rem; font-weight:800; font-family:'Inter', sans-serif;">${currency === 'TWD' ? 'NT$' : currency} ${bal.toLocaleString()}</div>
+                </div>
+                <div class="item-actions" style="margin-left:15px; display:flex; gap:8px;">
+                    <button class="action-btn edit-acc-btn" data-id="${acc.id}" title="編輯帳戶" style="background:rgba(255,255,255,0.05);">
+                        <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                    </button>
+                    <button class="action-btn del-acc-btn" data-id="${acc.id}" title="刪除帳戶" style="background:rgba(239,68,68,0.1); color:var(--danger);">
+                        <i class="fa-solid fa-trash" style="pointer-events:none;"></i>
+                    </button>
+                </div>`;
+            listDiv.appendChild(item);
+        });
+
+        if (totalDisplay) totalDisplay.textContent = `總餘額 NT$ ${Math.round(totalBalance).toLocaleString()}`;
+
+        // 綁定編輯
+        listDiv.querySelectorAll('.edit-acc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const stateObj = JSON.parse(localStorage.getItem('financeStateV10'));
+                const acc = stateObj.accounts.find(a => a.id === id);
+                if (!acc) return;
+
+                document.getElementById('ac-id').value = acc.id;
+                document.getElementById('ac-name').value = acc.name;
+                document.getElementById('ac-provider').value = acc.provider;
+                document.getElementById('ac-picker-label').innerHTML = `<span style="color:var(--text-main); font-weight:bold;">${acc.provider}</span>`;
+                updateAccountLogoPreview(acc.provider);
+                
+                document.getElementById('ac-remark').value = acc.remark || '';
+                document.getElementById('ac-currency').value = acc.currency || 'TWD';
+                document.getElementById('ac-balance').value = acc.balance || 0;
+                document.getElementById('ac-color').value = acc.color || '#6366f1';
+                document.getElementById('ac-include-assets').checked = acc.includeInAssets !== false;
+
+                document.getElementById('ac-form-title').textContent = '修改帳戶';
+                document.getElementById('ac-submit-btn').textContent = '保存修改';
+                document.getElementById('ac-submit-btn').style.background = '#4caf50';
+                document.getElementById('ac-submit-btn').style.color = '#fff';
+                document.getElementById('ac-cancel-edit').style.display = 'block';
+
+                document.getElementById('ac-form-title').scrollIntoView({behavior: 'smooth', block: 'center'});
+            });
+        });
+
+        // 綁定刪除
+        listDiv.querySelectorAll('.del-acc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const stateObj = JSON.parse(localStorage.getItem('financeStateV10'));
+                const acc = stateObj.accounts.find(a => a.id === id);
+                if (!acc) return;
+                
+                if (confirm(`確定刪除帳戶「${acc.name}」嗎？
+(注意：此動作將影響您的活期與總資產結算)`)) {
+                    stateObj.accounts = stateObj.accounts.filter(a => a.id !== id);
+                    localStorage.setItem('financeStateV10', JSON.stringify(stateObj));
+                    
+                    state = stateObj;
+                    saveState(false);
+                    renderAccounts();
+                }
+            });
+        });
+    }
+
+    // --- 帳戶表單提交 ---
+    function setupAccountForm() {
+        const form = document.getElementById('account-form');
+        const cancelBtn = document.getElementById('ac-cancel-edit');
+        if (!form) return;
+
+        const resetForm = () => {
+            form.reset();
+            document.getElementById('ac-id').value = '';
+            document.getElementById('ac-provider').value = '';
+            document.getElementById('ac-picker-label').innerHTML = `請選擇銀行或錢包`;
+            document.getElementById('ac-icon-preview').innerHTML = `<i class="fa-solid fa-building-columns" style="opacity:0.3;"></i>`;
+            document.getElementById('ac-form-title').textContent = '添加帳戶';
+            document.getElementById('ac-submit-btn').textContent = '確定添加';
+            document.getElementById('ac-submit-btn').style.background = '#facc15';
+            document.getElementById('ac-submit-btn').style.color = '#1e1b4b';
+            cancelBtn.style.display = 'none';
         };
 
-        state.accounts.push(newAcc);
-        localStorage.setItem('financeStateV10', JSON.stringify(state));
+        cancelBtn.addEventListener('click', resetForm);
 
-        // 重設表單與選擇器顯示
-        form.reset();
-        document.getElementById('ac-provider').value = '';
-        document.getElementById('ac-picker-label').innerHTML = `
-            <i class="fa-solid fa-magnifying-glass" style="margin-right:8px; opacity:0.5;"></i>
-            點此選擇銀行或電子錢包`;
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
 
-        renderAccounts();
-    });
-})();
+            const providerName = document.getElementById('ac-provider').value.trim();
+            if (!providerName) {
+                alert('請選擇銀行或電子錢包！');
+                return;
+            }
+
+            const editId = document.getElementById('ac-id').value;
+
+            let detectedType = 'cash';
+            if (walletDictionary.some(w => w.name === providerName)) detectedType = 'wallet';
+            else if (bankDictionary.some(b => b.name === providerName)) detectedType = 'bank';
+
+            const newAcc = {
+                id: editId || ('acc-' + Date.now()),
+                name: document.getElementById('ac-name').value.trim(),
+                remark: document.getElementById('ac-remark').value.trim(),
+                type: detectedType,
+                provider: providerName,
+                currency: document.getElementById('ac-currency').value,
+                balance: parseFloat(document.getElementById('ac-balance').value) || 0,
+                color: document.getElementById('ac-color').value,
+                includeInAssets: document.getElementById('ac-include-assets').checked
+            };
+
+            const stateObj = JSON.parse(localStorage.getItem('financeStateV10')) || {};
+            if (!stateObj.accounts) stateObj.accounts = [];
+
+            if (editId) {
+                const idx = stateObj.accounts.findIndex(a => a.id === editId);
+                if (idx !== -1) {
+                    stateObj.accounts[idx] = newAcc;
+                }
+            } else {
+                stateObj.accounts.push(newAcc);
+            }
+
+            localStorage.setItem('financeStateV10', JSON.stringify(stateObj));
+            
+            state = stateObj;
+            saveState(false);
+            
+            resetForm();
+            renderAccounts();
+            
+            if (window.updateDashboard) updateDashboard(true);
+        });
+    }
+
+    // 將 renderAccounts 給 global
+    window.renderAccounts = renderAccounts;
+    setupAccountForm();
+

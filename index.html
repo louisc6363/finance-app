@@ -482,37 +482,9 @@
                 <p>集中管理您的所有銀行帳戶與電子支付錢包。</p>
             </div>
         </header>
-        <div class="module-container">
-            <!-- 左：新增表單 -->
-            <div class="card glass form-card">
-                <h3>新增帳戶 / 電子錢包</h3>
-                <form id="account-form">
-                    <div class="form-group">
-                        <label>帳戶名稱</label>
-                        <input type="text" id="ac-name" placeholder="例如：薪資戶、日常支出帳戶" required>
-                    </div>
-                    <div class="form-group">
-                        <label>選擇銀行 / 支付平台</label>
-                        <!-- 隱藏欄位儲存選擇值 -->
-                        <input type="hidden" id="ac-provider" required>
-                        <!-- 觸發選擇器的按鈕 -->
-                        <button type="button" id="ac-picker-trigger" class="provider-picker-trigger">
-                            <span id="ac-picker-label">
-                                <i class="fa-solid fa-magnifying-glass" style="margin-right:8px; opacity:0.5;"></i>
-                                點此選擇銀行或電子錢包
-                            </span>
-                            <i class="fa-solid fa-chevron-right" style="opacity:0.4;"></i>
-                        </button>
-                    </div>
-                    <div class="form-group">
-                        <label>初始餘額 (NT$)</label>
-                        <input type="number" id="ac-balance" placeholder="0" min="0">
-                    </div>
-                    <button type="submit" class="submit-btn" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);">新增帳戶</button>
-                </form>
-            </div>
-            <!-- 右：帳戶清單 -->
-            <div class="card glass list-card">
+        <div class="module-container" style="display: flex; gap: 20px;">
+            <!-- 左：帳戶清單 -->
+            <div class="card glass list-card" style="flex: 2;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h3 style="margin:0;">我的帳戶清單</h3>
                     <div id="ac-total-display" style="font-size:1rem; font-weight:700; color:var(--primary);">總餘額 NT$ 0</div>
@@ -520,6 +492,75 @@
                 <div id="account-list">
                     <!-- JS 動態生成 -->
                 </div>
+            </div>
+
+            <!-- 右：新增表單 -->
+            <div class="card glass form-card" style="flex: 1.2; min-width: 320px;">
+                <h3 id="ac-form-title">添加帳戶</h3>
+                <form id="account-form">
+                    <input type="hidden" id="ac-id"> <!-- 用於編輯模式 -->
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0;">圖標</label>
+                        <div id="ac-icon-preview" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-card); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                            <i class="fa-solid fa-building-columns" style="opacity:0.3;"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0; min-width: 80px;">名稱</label>
+                        <div style="flex: 1; text-align: right; position: relative;">
+                            <input type="hidden" id="ac-provider" required>
+                            <button type="button" id="ac-picker-trigger" class="provider-picker-trigger" style="background:transparent; border:none; color:var(--text-main); font-weight:bold; cursor:pointer; padding:0; outline:none; text-align:right; width: 100%;">
+                                <span id="ac-picker-label">請選擇銀行或錢包</span>
+                                <i class="fa-solid fa-chevron-right" style="opacity:0.4; font-size: 0.8rem; margin-left: 5px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0; min-width: 80px;">備註</label>
+                        <input type="text" id="ac-remark" placeholder="例：卡號後四位" style="background:transparent; border:none; text-align:right; flex:1; outline:none; color:var(--text-main);">
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0; min-width: 80px;">貨幣</label>
+                        <select id="ac-currency" style="background:transparent; border:none; text-align:right; flex:1; outline:none; color:var(--text-main); appearance:none; font-weight:bold; direction: rtl;">
+                            <!-- 動態填入 -->
+                            <option value="TWD">TWD</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0; min-width: 80px;">餘額</label>
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-weight:bold; margin-right:5px;">$</span>
+                            <input type="number" id="ac-balance" placeholder="0" min="0" step="any" style="background:transparent; border:none; text-align:right; width:100px; outline:none; color:var(--text-main); font-weight:bold; font-size: 1.1rem;">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <label style="margin-bottom:0; min-width: 80px;">圖表顏色</label>
+                        <input type="color" id="ac-color" value="#6366f1" style="background:none; border:none; width:30px; height:30px; cursor:pointer; padding:0;">
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="margin-bottom:0;">計入資產</label>
+                            <i class="fa-regular fa-circle-question" title="關閉時該筆資金將不會納入總資產與活期餘額計算" style="opacity:0.5; font-size:0.9rem;"></i>
+                        </div>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="ac-include-assets" checked>
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="ac-cancel-edit" class="submit-btn" style="flex:1; background:rgba(255,255,255,0.1); color:var(--text-main); display:none;">取消編輯</button>
+                        <button type="submit" id="ac-submit-btn" class="submit-btn" style="flex:2; background:#facc15; color:#1e1b4b; font-weight:bold; border-radius:30px;">確定添加</button>
+                    </div>
+                </form>
             </div>
         </div>
     </section>

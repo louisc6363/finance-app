@@ -739,13 +739,45 @@ header {
     border-radius: 20px;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.2s;
-}
-
 .pill:hover {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+    border-color: var(--primary);
+}
+
+/* === Accounts Premium Updates === */
+#account-form .form-group input, 
+#account-form .form-group select {
+    font-size: 0.95rem;
+}
+#account-form .form-group input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+.account-item {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, box-shadow 0.2s;
+    border: 1px solid transparent;
+}
+.account-item:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+/* 隱藏原生顏色選擇器的邊框 */
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
 }
 
 /* 預覽區 */
