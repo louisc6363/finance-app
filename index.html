@@ -445,17 +445,17 @@
                         <input type="text" id="ac-name" placeholder="例如：薪資戶、日常支出帳戶" required>
                     </div>
                     <div class="form-group">
-                        <label>帳戶類別</label>
-                        <select id="ac-type">
-                            <option value="bank">銀行帳戶 (Bank)</option>
-                            <option value="wallet">電子錢包 (E-Wallet)</option>
-                            <option value="cash">實體現金 (Cash)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="position:relative;">
-                        <label>銀行 / 支付平台（支援模糊搜尋）</label>
-                        <input type="text" id="ac-provider" placeholder="輸入關鍵字，如：013、街口、LINE..." autocomplete="off">
-                        <ul id="ac-provider-suggestions" class="suggestions-list" style="display:none;"></ul>
+                        <label>選擇銀行 / 支付平台</label>
+                        <!-- 隱藏欄位儲存選擇值 -->
+                        <input type="hidden" id="ac-provider" required>
+                        <!-- 觸發選擇器的按鈕 -->
+                        <button type="button" id="ac-picker-trigger" class="provider-picker-trigger">
+                            <span id="ac-picker-label">
+                                <i class="fa-solid fa-magnifying-glass" style="margin-right:8px; opacity:0.5;"></i>
+                                點此選擇銀行或電子錢包
+                            </span>
+                            <i class="fa-solid fa-chevron-right" style="opacity:0.4;"></i>
+                        </button>
                     </div>
                     <div class="form-group">
                         <label>初始餘額 (NT$)</label>
@@ -476,6 +476,31 @@
             </div>
         </div>
     </section>
+
+    <!-- 銀行 / 電子錢包 選擇器 Overlay -->
+    <div id="provider-picker-overlay" class="provider-picker-overlay" style="display:none;">
+        <div class="provider-picker-panel">
+            <div class="picker-header">
+                <span class="picker-title">選擇銀行或電子錢包</span>
+                <button type="button" id="picker-close-btn" class="picker-close-btn">&times;</button>
+            </div>
+            <!-- 搜尋框 -->
+            <div class="picker-search-wrap">
+                <i class="fa-solid fa-magnifying-glass picker-search-icon"></i>
+                <input type="text" id="picker-search" class="picker-search-input" placeholder="輸入名稱或代碼搜尋...">
+            </div>
+            <!-- 分頁標籤 -->
+            <div class="picker-tabs">
+                <button class="picker-tab active" data-tab="bank">🏦 銀行帳戶</button>
+                <button class="picker-tab" data-tab="wallet">📱 電子錢包</button>
+                <button class="picker-tab" data-tab="cash">💵 現金</button>
+            </div>
+            <!-- 卡片格 -->
+            <div class="picker-grid" id="picker-grid">
+                <!-- JS 動態生成 -->
+            </div>
+        </div>
+    </div>
 
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
