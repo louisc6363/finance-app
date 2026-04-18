@@ -615,44 +615,54 @@ document.addEventListener('DOMContentLoaded', () => {
         bridgeState.reserveBalance = data.reserveCash;
         
         document.getElementById('bridge-amount').value = '';
-        document.getElementById('bridge-arrow-icon').classList.remove('reflect-y');
+        const arrow = document.getElementById('bridge-arrow-icon');
+        arrow.style.transform = 'rotate(0deg)'; // 重置箭頭
         
         updateBridgeUI();
-        modal.classList.add('active');
+        modal.classList.add('show');
     };
 
     const updateBridgeUI = () => {
         const isD2R = bridgeState.direction === 'demand_to_reserve';
-        const sourceName = isD2R ? '活期存餘' : '備用金';
-        const targetName = isD2R ? '備用金' : '活期存餘';
         
-        bridgeState.sourceBalance = isD2R ? bridgeState.demandBalance : bridgeState.reserveBalance;
-        bridgeState.targetBalance = isD2R ? bridgeState.reserveBalance : bridgeState.demandBalance;
+        // 抓取餘額顯示元素
+        const demandDisplay = document.getElementById('bridge-demand-display-balance');
+        const reserveDisplay = document.getElementById('bridge-reserve-display-balance');
+        
+        demandDisplay.textContent = `NT$ ${bridgeState.demandBalance.toLocaleString()}`;
+        reserveDisplay.textContent = `NT$ ${bridgeState.reserveBalance.toLocaleString()}`;
 
-        document.getElementById('bridge-source-name').textContent = sourceName;
-        document.getElementById('bridge-target-name').textContent = targetName;
-        document.getElementById('bridge-source-balance').textContent = `NT$ ${bridgeState.sourceBalance.toLocaleString()}`;
-        document.getElementById('bridge-target-balance').textContent = `NT$ ${bridgeState.targetBalance.toLocaleString()}`;
+        // 切換桶子的高亮狀態 (箭頭出發點為 source, 到達點為 target)
+        const dBox = document.getElementById('bridge-demand-bucket');
+        const rBox = document.getElementById('bridge-reserve-bucket');
         
-        // 切換高亮
-        const sBucket = document.getElementById('bridge-source-bucket');
-        const tBucket = document.getElementById('bridge-target-bucket');
-        sBucket.className = 'bridge-bucket source active-source';
-        tBucket.className = 'bridge-bucket target active-target';
+        if (isD2R) {
+            dBox.className = 'bridge-bucket active-source';
+            rBox.className = 'bridge-bucket active-target';
+        } else {
+            dBox.className = 'bridge-bucket active-target';
+            rBox.className = 'bridge-bucket active-source';
+        }
 
         calculateBridgePreview();
     };
 
     const calculateBridgePreview = () => {
         const amount = parseFloat(document.getElementById('bridge-amount').value) || 0;
-        const sourceAfter = Math.max(0, bridgeState.sourceBalance - amount);
-        const targetAfter = bridgeState.targetBalance + amount;
+        const isD2R = bridgeState.direction === 'demand_to_reserve';
+        
+        const sourceBalance = isD2R ? bridgeState.demandBalance : bridgeState.reserveBalance;
+        const targetBalance = isD2R ? bridgeState.reserveBalance : bridgeState.demandBalance;
 
+        const sourceAfter = Math.max(0, sourceBalance - amount);
+        const targetAfter = targetBalance + amount;
+
+        // 預覽文字更新
         document.getElementById('preview-source-after').textContent = `NT$ ${sourceAfter.toLocaleString()}`;
         document.getElementById('preview-target-after').textContent = `NT$ ${targetAfter.toLocaleString()}`;
         
         const confirmBtn = document.getElementById('bridge-confirm-btn');
-        if (amount > bridgeState.sourceBalance || amount <= 0) {
+        if (amount > sourceBalance || amount <= 0) {
             confirmBtn.disabled = true;
             confirmBtn.style.opacity = '0.5';
         } else {
@@ -661,11 +671,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 事件監聽：反轉按鈕
+    // 事件監聽：反轉按鈕 (控制箭頭旋轉與方向狀態)
     document.getElementById('bridge-reverse-btn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        bridgeState.direction = bridgeState.direction === 'demand_to_reserve' ? 'reserve_to_demand' : 'demand_to_reserve';
-        document.getElementById('bridge-arrow-icon').classList.toggle('reflect-y');
+        const isD2R = bridgeState.direction === 'demand_to_reserve';
+        bridgeState.direction = isD2R ? 'reserve_to_demand' : 'demand_to_reserve';
+        
+        // 箭頭旋轉 180 度
+        const arrow = document.getElementById('bridge-arrow-icon');
+        arrow.style.transform = isD2R ? 'rotate(180deg)' : 'rotate(0deg)';
+        
         updateBridgeUI();
     });
 
@@ -676,25 +691,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.pill').forEach(pill => {
         pill.onclick = () => {
             const pct = parseFloat(pill.getAttribute('data-pct'));
-            document.getElementById('bridge-amount').value = Math.floor(bridgeState.sourceBalance * pct);
+            const isD2R = bridgeState.direction === 'demand_to_reserve';
+            const sourceBalance = isD2R ? bridgeState.demandBalance : bridgeState.reserveBalance;
+            
+            document.getElementById('bridge-amount').value = Math.floor(sourceBalance * pct);
             calculateBridgePreview();
         };
     });
 
     // 事件監聽：取消與關閉
-    const closeBridge = () => document.getElementById('cash-bridge-modal').classList.remove('active');
+    const closeBridge = () => document.getElementById('cash-bridge-modal').classList.remove('show');
     document.getElementById('bridge-close-btn')?.addEventListener('click', closeBridge);
     document.getElementById('bridge-cancel-btn')?.addEventListener('click', closeBridge);
 
-    // 事件監聽：確認提交
+    // 事件監聽：摘要與執行
     document.getElementById('bridge-modal-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const amount = parseFloat(document.getElementById('bridge-amount').value);
-        if (amount > bridgeState.sourceBalance || amount <= 0) return;
+        const isD2R = bridgeState.direction === 'demand_to_reserve';
+        const sourceBalance = isD2R ? bridgeState.demandBalance : bridgeState.reserveBalance;
+
+        if (amount > sourceBalance || amount <= 0) return;
 
         captureHistory();
-        const isD2R = bridgeState.direction === 'demand_to_reserve';
-        
         if (isD2R) {
             addLog('system', 'transfer', `資金調度：由活期挪移至備用金`, 0);
             state.baseCash -= amount;
