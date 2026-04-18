@@ -483,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.debts) state.debts = [];
     if (state.baseCash === undefined) state.baseCash = 0;
     if (!state.accounts) state.accounts = []; // 帳戶管理欄位
+    if (state.reserveCash === undefined) state.reserveCash = 0; // 備用金 (Fixed Cash)
 
     // --- Data Maintenance: Force Purge 170k Test Data ---
     if (!localStorage.getItem('repair_170k_v2')) {
@@ -569,6 +570,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveState();
             }
         }
+        
+        if (e.target.closest('#edit-reserve-btn')) {
+            let currentReserve = state.reserveCash || 0;
+            let result = prompt(`⚠️ 注意：此操作代表您在銀行實際移動了資金，將改變備用金水位。\n\n調整後「活期存餘」將自動重算。\n\n請輸入新的「備用金 (Fixed Cash)」總餘額 (NT$):`, currentReserve);
+            
+            if (result !== null && !isNaN(parseFloat(result))) {
+                const newReserve = parseFloat(result);
+                const diff = newReserve - currentReserve;
+                if (diff === 0) return;
+                
+                const data = getCalculatedData();
+                const currentDemand = data.demandDeposit;
+                const newDemand = currentDemand - diff;
+                
+                const confirmed = confirm(`請確認資金流動：\n\n備用金將從 ${currentReserve.toLocaleString()} 調整為 ${newReserve.toLocaleString()}\n活期存餘將自動結算為 ${newDemand.toLocaleString()}\n\n確認執行？`);
+                
+                if (confirmed) {
+                    captureHistory();
+                    addLog('system', 'balance', `調整備用金總額為 NT$ ${newReserve.toLocaleString()}`, diff);
+                    state.reserveCash = newReserve;
+                    saveState();
+                }
+            }
+        }
     });
 
     document.getElementById('toggle-invest-pnl')?.addEventListener('change', () => {
@@ -594,17 +619,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime();
 
         let tIncome = 0, tExpense = 0;
-        let cumulativeSurplus = 0; // 改為累計所有歷史交易
+        let cumulativeSurplus = 0;
 
         state.transactions.forEach(t => {
             const txTime = new Date(t.date).getTime();
             const amount = Number(t.amount);
 
-            // 累計歷史總量
             if (t.type === 'income') cumulativeSurplus += amount;
             else if (t.type === 'expense') cumulativeSurplus -= amount;
 
-            // 僅本月統計 (用於收支分析圖表)
             if (txTime >= startOfMonth && txTime <= endOfMonth) {
                 if (t.type === 'income') tIncome += amount;
                 if (t.type === 'expense') tExpense += amount;
@@ -624,38 +647,101 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 核心修正：目前現金 = 基準現金 + 所有歷史交易加總
-        let currentCash = state.baseCash + cumulativeSurplus;
+        // 活期存餘 = 基準現金 + 交易累計 - 備用金
+        const reserveCash = state.reserveCash || 0;
+        const demandDeposit = state.baseCash + cumulativeSurplus - reserveCash;
+        const currentCash = demandDeposit + reserveCash; // = baseCash + cumulativeSurplus
+
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
         state.debts.forEach(d => {
-            // 修正：總覽卡片應顯示「剩餘本金」而非「原始核貸本金」
             totalDebts += calculateBalance(d);
         });
         let netWorth = totalAssets - totalDebts;
 
-        return { tIncome, tExpense, cashflowSurplus, investTotal, currentCash, totalAssets, totalDebts, netWorth };
+        return { tIncome, tExpense, cashflowSurplus, investTotal, demandDeposit, reserveCash, currentCash, totalAssets, totalDebts, netWorth };
     };
 
-    const formatCurrency = (num) => 'NT$ ' + num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const formatCurrency = (num) => 'NT$ ' + Math.abs(Math.round(num)).toLocaleString('en-US');
 
-    const animateValue = (id, end, duration) => {
-        const obj = document.getElementById(id);
-        if (!obj) return;
-        let start = parseInt(obj.getAttribute('data-current')) || 0;
-        if (start === end) { obj.innerHTML = formatCurrency(end); return; }
+    // === Odometer 動畫引擎 ===
+    const animateOdometer = (containerId, targetValue) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-        let startTimestamp = null;
-        const step = (timestamp) => {
-            if (!startTimestamp) startTimestamp = timestamp;
-            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
-            const currentVal = Math.floor(easeOutProgress * (end - start) + start);
-            obj.innerHTML = formatCurrency(currentVal);
-            if (progress < 1) { window.requestAnimationFrame(step); }
-            else { obj.setAttribute('data-current', end); }
-        };
-        window.requestAnimationFrame(step);
+        const digitsEl = container.querySelector('.od-digits');
+        if (!digitsEl) return;
+
+        const isNeg = targetValue < 0;
+        const absVal = Math.abs(Math.round(targetValue));
+        const numStr = absVal.toLocaleString('en-US'); // 例: "1,234,567"
+
+        // 如果是負數，在 container 上標記 (CSS 需要處理色彩)
+        container.classList.toggle('od-negative', isNeg);
+
+        // 取得目前已經渲染的 digit 元素
+        const currentDigits = digitsEl.querySelectorAll('.od-digit');
+        const targetChars = numStr.split('');
+
+        // 如果字元數不含連符和已渲染的不同，重建整個 DOM
+        const rebuildNeeded =
+            currentDigits.length !== targetChars.length ||
+            Array.from(currentDigits).some((el, i) => el.getAttribute('data-type') !== (isNaN(targetChars[i]) ? 'sep' : 'digit'));
+
+        if (rebuildNeeded) {
+            digitsEl.innerHTML = '';
+            targetChars.forEach(ch => {
+                const span = document.createElement('span');
+                if (ch === ',' || ch === '-') {
+                    span.className = 'od-digit od-comma';
+                    span.setAttribute('data-type', 'sep');
+                    span.textContent = ch;
+                } else {
+                    span.className = 'od-digit';
+                    span.setAttribute('data-type', 'digit');
+                    span.setAttribute('data-current', '0');
+                    // 建立 0-9 的滞動条
+                    const strip = document.createElement('div');
+                    strip.className = 'od-strip';
+                    for (let d = 0; d <= 9; d++) {
+                        const s = document.createElement('span');
+                        s.textContent = d;
+                        strip.appendChild(s);
+                    }
+                    span.appendChild(strip);
+                }
+                digitsEl.appendChild(span);
+            });
+        }
+
+        // 動畫每個數字位
+        const allDigitEls = digitsEl.querySelectorAll('.od-digit[data-type="digit"]');
+        const numericChars = targetChars.filter(c => !isNaN(c));
+
+        allDigitEls.forEach((el, i) => {
+            const targetDigit = parseInt(numericChars[i] || '0');
+            const strip = el.querySelector('.od-strip');
+            if (!strip) return;
+
+            // 初始化：拿目前推算的初始密
+            const currentDigit = parseInt(el.getAttribute('data-current')) || 0;
+            strip.style.transition = 'none';
+            strip.style.transform = `translateY(-${currentDigit}em)`;
+
+            // 下一沀運行動畫
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    strip.style.transition = 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)';
+                    strip.style.transform = `translateY(-${targetDigit}em)`;
+                    el.setAttribute('data-current', targetDigit);
+                });
+            });
+        });
+
+        // 更新分隔符
+        const allSepEls = digitsEl.querySelectorAll('.od-digit.od-comma');
+        const sepChars = targetChars.filter(c => c === ',' || c === '-');
+        allSepEls.forEach((el, i) => { el.textContent = sepChars[i] || ','; });
     };
 
     let chartInstances = {};
@@ -666,21 +752,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateDashboard = (animate = true) => {
         const data = getCalculatedData();
-        let ms = animate ? 1500 : 0;
-        animateValue('total-networth', data.netWorth, ms);
-        animateValue('monthly-surplus', data.currentCash, ms); // 修正：此處應顯示總現金，而非僅本月盈餘
-        animateValue('total-assets', data.totalAssets, ms);
-        animateValue('total-liabilities', data.totalDebts, ms);
 
+        // Odometer 更新
+        animateOdometer('total-networth', data.netWorth);
+        animateOdometer('total-liabilities', data.totalDebts);
+        animateOdometer('cash-demand', data.demandDeposit);
+        animateOdometer('cash-reserve', data.reserveCash);
+        animateOdometer('cash-total', data.currentCash);
+        animateOdometer('total-assets', data.totalAssets);
+
+        // Hero Banner 負數樣式
+        const heroBanner = document.getElementById('hero-banner');
+        if (heroBanner) {
+            heroBanner.classList.toggle('hero-negative', data.netWorth < 0);
+        }
+
+        // 圓餅圖更新
         if (chartInstances.asset) {
-            let cryptoValue = 0; let stockValue = 0; let bondValue = 0;
+            let cryptoValue = 0, stockValue = 0, bondValue = 0, commodityValue = 0;
             state.investments.forEach(i => {
                 if (i.type === 'crypto') cryptoValue += (i.amount * i.currentPrice);
                 else if (i.type === 'bonds') bondValue += (i.amount * i.currentPrice);
+                else if (i.type === 'commodity') commodityValue += (i.amount * i.currentPrice);
                 else stockValue += (i.amount * i.currentPrice);
             });
-            chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, bondValue, data.currentCash];
+            chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, bondValue, commodityValue, data.currentCash];
             chartInstances.asset.update();
+        }
+
+        // 水平長條圖更新
+        if (chartInstances.allocation && data.totalAssets > 0) {
+            let cryptoVal = 0, twStockVal = 0, usStockVal = 0, bondsVal = 0, commVal = 0;
+            state.investments.forEach(i => {
+                if (i.type === 'crypto') cryptoVal += i.amount * i.currentPrice;
+                else if (i.type === 'tw_stock') twStockVal += i.amount * i.currentPrice;
+                else if (i.type === 'us_stock') usStockVal += i.amount * i.currentPrice;
+                else if (i.type === 'bonds') bondsVal += i.amount * i.currentPrice;
+                else if (i.type === 'commodity') commVal += i.amount * i.currentPrice;
+            });
+            const pct = v => parseFloat((v / data.totalAssets * 100).toFixed(1));
+            chartInstances.allocation.data.datasets[0].data = [
+                pct(cryptoVal), pct(twStockVal), pct(usStockVal), pct(bondsVal), pct(commVal), pct(data.currentCash)
+            ];
+            chartInstances.allocation.update();
         }
 
         if (chartInstances.cashflow) {
@@ -1471,8 +1585,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctxAsset) {
             chartInstances.asset = new Chart(ctxAsset.getContext('2d'), {
                 type: 'doughnut',
-                data: { labels: ['加密貨幣', '股票', '債券', '現金存款'], datasets: [{ data: [1, 1, 1, 1], backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#10b981'], borderWidth: 0, hoverOffset: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }, cutout: '78%' }
+                data: {
+                    labels: ['加密貨幣', '股票', '債券', '匯率/商品', '現金'],
+                    datasets: [{
+                        data: [1, 1, 1, 1, 1],
+                        backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#eab308', '#10b981'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, font: { size: 12 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                    return ` ${ctx.label}: NT$ ${Math.round(ctx.parsed).toLocaleString()} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '78%'
+                }
+            });
+        }
+
+        // === 水平長條圖（各類資產佔比 %）===
+        const ctxAlloc = document.getElementById('allocationBarChart');
+        if (ctxAlloc) {
+            chartInstances.allocation = new Chart(ctxAlloc.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['加密貨幣', '台灣股市', '美國股市', '債券/ETF', '匯率/商品', '現金'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: ['#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#eab308', '#06b6d4'],
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` }
+                        },
+                        datalabels: false
+                    },
+                    scales: {
+                        x: {
+                            min: 0, max: 100,
+                            grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                            ticks: {
+                                color: 'rgba(255,255,255,0.4)',
+                                callback: v => v + '%',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: 'rgba(255,255,255,0.7)', font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
             });
         }
 

@@ -32,68 +32,105 @@
             </ul>
         </nav>
 
-        <!-- Main Content -->
+        <!-- 主內容區（header + 所有 section 都在這裡） -->
         <main class="main-content">
-            <!-- Header -->
-            <header>
-                <div class="greeting">
-                    <h2>早安！</h2>
-                    <p>您的財務狀況看起來非常穩健健康。</p>
-                </div>
-                <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&rounded=true" alt="User Avatar">
-                </div>
-            </header>
 
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="page-section active">
-                <div class="summary-cards">
-                    <div class="card glass primary-card" style="position:relative;">
-                        <div class="card-title">總淨值 (Net Worth)</div>
-                        <div class="card-value glow" id="total-networth">NT$ 0</div>
-                        <div class="pnl-toggle-wrapper" title="關閉時，總淨值僅會加上您的投入本金，過濾市場高低起伏">
-                            <span class="pnl-toggle-label">含未實現損益</span>
-                            <label class="ios-switch">
-                                <input type="checkbox" id="toggle-invest-pnl" checked>
-                                <span class="ios-slider"></span>
-                            </label>
+        <!-- Header（移除 greeting，只保留頭像） -->
+        <header class="dash-header">
+            <div class="dash-header-left">
+                <span class="dash-sync-area" id="sync-status"></span>
+            </div>
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&rounded=true" alt="User Avatar">
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="page-section active">
+
+            <!-- ① Hero 淨資產橫幅 -->
+            <div class="hero-banner glass" id="hero-banner">
+                <div class="hero-left">
+                    <div class="hero-label">淨資產 <span class="hero-sublabel">Net Worth</span></div>
+                    <div class="hero-value" id="total-networth">
+                        <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
+                    </div>
+                    <div class="pnl-toggle-wrapper" title="關閉時，總淨值僅會加上您的投入本金，過濾市場高低起伏">
+                        <span class="pnl-toggle-label">含未實現損益</span>
+                        <label class="ios-switch">
+                            <input type="checkbox" id="toggle-invest-pnl" checked>
+                            <span class="ios-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="hero-divider"></div>
+                <div class="hero-right">
+                    <div class="hero-label">總負債 <span class="hero-sublabel">Liabilities</span></div>
+                    <div class="hero-debt-value" id="total-liabilities">
+                        <span class="od-prefix">−NT$&nbsp;</span><span class="od-digits"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ② 第一行：現金卡 + 總資產卡 -->
+            <div class="dash-grid-2">
+                <!-- 現金卡 -->
+                <div class="card glass dash-cash-card">
+                    <div class="card-title">💰 現金總覽</div>
+                    <div class="cash-row">
+                        <div class="cash-item">
+                            <div class="cash-item-label">活期存餘</div>
+                            <div class="cash-item-value" id="cash-demand">
+                                <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
+                            </div>
+                        </div>
+                        <div class="cash-item">
+                            <div class="cash-item-label">
+                                備用金 (Fixed Cash)
+                                <button id="edit-reserve-btn" class="action-btn" style="padding:2px 10px; font-size:0.72rem; border-radius:12px; border:1px solid rgba(255,255,255,0.2); width:auto; height:24px; margin-left:8px;">
+                                    <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                                </button>
+                            </div>
+                            <div class="cash-item-value" id="cash-reserve">
+                                <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>現金存款池</span>
-                            <button id="edit-cash-btn" class="action-btn" style="padding: 3px 12px; font-size: 0.75rem; border-radius:15px; border:1px solid rgba(255,255,255,0.2); width:auto; height: 28px;"><i class="fa-solid fa-pen" style="pointer-events: none;"></i><span style="pointer-events: none; margin-left: 6px; font-weight:600;">編 輯</span></button>
+                    <div class="cash-total-row">
+                        <span class="cash-total-label">現金合計</span>
+                        <div class="cash-total-value" id="cash-total">
+                            <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
                         </div>
-                        <div class="card-value positive" id="monthly-surplus">NT$ 0</div>
-                        <div class="card-subtitle" style="margin-top: 5px;">點擊上方編輯更新真實餘額</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-title">總資產 (Assets)</div>
-                        <div class="card-value text-default" id="total-assets">NT$ 0</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-title">總負債 (Liabilities)</div>
-                        <div class="card-value negative" id="total-liabilities">NT$ 0</div>
                     </div>
                 </div>
 
-                <div class="charts-container">
-                    <div class="card glass chart-card asset-chart-card">
-                        <h3>總資產配置</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="assetChart"></canvas>
-                        </div>
+                <!-- 總資產卡 -->
+                <div class="card glass">
+                    <div class="card-title">📊 總資產 (Assets)</div>
+                    <div class="card-value text-default" id="total-assets">
+                        <span class="od-prefix">NT$&nbsp;</span><span class="od-digits"></span>
                     </div>
-                    <div class="card glass chart-card cashflow-chart-card">
-                        <h3>近六個月收支趨勢</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="cashflowChart"></canvas>
-                        </div>
+                    <div class="card-subtitle" style="margin-top:8px; font-size:0.85rem;">= 現金 + 投資組合市值</div>
+                </div>
+            </div>
+
+            <!-- ③ 第二行：圓餅圖 + 水平長條圖 -->
+            <div class="dash-grid-2">
+                <div class="card glass chart-card asset-chart-card">
+                    <h3>資產配置</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="assetChart"></canvas>
                     </div>
                 </div>
-            </section>
-            
-            <!-- Placeholders for other pages -->
+                <div class="card glass chart-card">
+                    <h3>各類資產佔比</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="allocationBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
             <section id="cashflow" class="page-section">
                 <header>
                     <div class="greeting">
