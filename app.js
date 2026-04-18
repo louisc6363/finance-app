@@ -567,11 +567,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result !== null && !isNaN(parseFloat(result))) {
                 const targetDemand = parseFloat(result);
-                // 核心邏輯：修正 baseCash 使得計算結果符合輸入
-                // 活期 = baseCash + 交易累積 - reserveCash
-                // baseCash = 活期 - 交易累積 + reserveCash
-                const cumulativeSurplus = data.demandDeposit - state.baseCash + (state.reserveCash || 0);
-                const newBaseCash = targetDemand - cumulativeSurplus + (state.reserveCash || 0);
+                // 活期 = baseCash + 交易累積
+                // baseCash = 活期 - 交易累積
+                const cumulativeSurplus = data.demandDeposit - state.baseCash;
+                const newBaseCash = targetDemand - cumulativeSurplus;
                 
                 captureHistory();
                 addLog('system', 'init', `校準期初活期金額為 NT$ ${targetDemand.toLocaleString()}`, targetDemand - currentDemand);
@@ -583,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // [2] 設定備用金期初金額
         if (e.target.closest('#edit-reserve-btn')) {
             let currentReserve = state.reserveCash || 0;
-            let result = prompt(`【設定期初備用金金額】\n\n此操作將直接設定您的備用金起始水位。\n(目前值: ${currentReserve.toLocaleString()})\n\n請輸入您目前實際的「備用金 (Fixed Cash)」金額 (NT$):`, currentReserve);
+            let result = prompt(`【設定期初備用金金額】\n\n此操作將直接設定您的備用金期初水位，會增加總資產且不會影響活期。\n(目前值: ${currentReserve.toLocaleString()})\n\n請輸入您目前實際的「備用金 (Fixed Cash)」金額 (NT$):`, currentReserve);
             
             if (result !== null && !isNaN(parseFloat(result)) && parseFloat(result) >= 0) {
                 const targetReserve = parseFloat(result);
@@ -607,7 +606,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert(`❌ 調度失敗：活期餘額不足 (餘額: ${data.demandDeposit.toLocaleString()})`);
                     } else if (amount > 0) {
                         captureHistory();
-                        addLog('system', 'transfer', `資金調度：活期轉入備用金`, 0);
+                        addLog('system', 'transfer', `資金調度：由活期挪移至備用金`, 0);
+                        // 挪移邏輯：活期期初減少, 備用金期初增加 (總額不變)
+                        state.baseCash -= amount;
                         state.reserveCash += amount;
                         saveState();
                         alert(`✅ 已將 ${amount.toLocaleString()} 撥入備用金。`);
@@ -621,8 +622,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert(`❌ 調度失敗：備用金餘額不足 (餘額: ${data.reserveCash.toLocaleString()})`);
                     } else if (amount > 0) {
                         captureHistory();
-                        addLog('system', 'transfer', `資金調度：備用金轉回活期`, 0);
+                        addLog('system', 'transfer', `資金調度：由備用金挪回活期`, 0);
+                        // 挪移邏輯：備用金期初減少, 活期期初增加 (總額不變)
                         state.reserveCash -= amount;
+                        state.baseCash += amount;
                         saveState();
                         alert(`✅ 已將 ${amount.toLocaleString()} 撥回活期存餘。`);
                     }
@@ -682,10 +685,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 活期存餘 = 基準現金 + 交易累計 - 備用金
+        // 【核心修正】獨立雙水槽模型
+        // 活期存餘 = 活期期初(baseCash) + 交易累積
+        const demandDeposit = state.baseCash + cumulativeSurplus;
+        // 備用金 = 備用金期初(reserveCash)
         const reserveCash = state.reserveCash || 0;
-        const demandDeposit = state.baseCash + cumulativeSurplus - reserveCash;
-        const currentCash = demandDeposit + reserveCash; // = baseCash + cumulativeSurplus
+        
+        const currentCash = demandDeposit + reserveCash; 
 
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
