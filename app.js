@@ -457,6 +457,13 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('financeStateV10', JSON.stringify(state));
     }
 
+    // --- 確保所有狀態欄位均已正確初始化 ---
+    if (!state.logs) state.logs = [];
+    if (!state.transactions) state.transactions = [];
+    if (!state.investments) state.investments = [];
+    if (!state.debts) state.debts = [];
+    if (state.baseCash === undefined) state.baseCash = 0;
+
     // --- Data Maintenance: Force Purge 170k Test Data ---
     if (!localStorage.getItem('repair_170k_v2')) {
         console.log('Running one-time data maintenance: Purging 170k test data...');
