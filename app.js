@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (targetPage === 'dashboard') updateDashboard(true);
             if (targetPage === 'investments') fetchPrices();
+            if (targetPage === 'history') renderHistory();
         });
     });
 
@@ -441,37 +442,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 3. 狀態管理與復原機制 (Undo System) ---
-    // 改良版資料讀取：全新版本 V9，徹底清除舊資料與假資料殘留
-    let state = JSON.parse(localStorage.getItem('financeStateV9'));
+    // 改良版資料讀取：全新版本 V10 (支援全局日誌與持久化歷史)
+    let state = JSON.parse(localStorage.getItem('financeStateV10'));
     if (!state) {
+        // 嘗試從舊版本遷移
+        const oldState = JSON.parse(localStorage.getItem('financeStateV9'));
         state = {
-            transactions: [],
-            investments: [],
-            debts: [],
-            baseCash: 0
+            transactions: oldState ? oldState.transactions : [],
+            investments: oldState ? oldState.investments : [],
+            debts: oldState ? oldState.debts : [],
+            baseCash: oldState ? oldState.baseCash : 0,
+            logs: []
         };
-        localStorage.setItem('financeStateV9', JSON.stringify(state));
+        localStorage.setItem('financeStateV10', JSON.stringify(state));
     }
 
-    let historyStack = [];
+    // --- Data Maintenance: Force Purge 170k Test Data ---
+    if (!localStorage.getItem('repair_170k_v2')) {
+        console.log('Running one-time data maintenance: Purging 170k test data...');
+        const amountToPurge = 170000;
+        
+        // 1. Identify debt IDs for 170k loans
+        const targetDebtIds = state.debts
+            .filter(d => d.total === amountToPurge || (d.name && d.name.includes('170000')))
+            .map(d => d.id);
+            
+        // 2. Filter Transactions
+        const initialTxCount = state.transactions.length;
+        state.transactions = state.transactions.filter(t => {
+            const isTargetAmount = Math.abs(t.amount) === amountToPurge;
+            const isLinked = t.linkId && targetDebtIds.includes(t.linkId);
+            const isNamed170k = (t.category && t.category.includes('170000')) || (t.relatedAsset && t.relatedAsset.includes('170000'));
+            
+            // 如果這筆交易是為了測試 17 萬信貸產生的（金額符合、或是名稱符合、或是連結到該債務），則移除
+            return !(isTargetAmount || isLinked || isNamed170k);
+        });
+        
+        // 3. Filter Debts
+        state.debts = state.debts.filter(d => !targetDebtIds.includes(d.id));
+        
+        // 4. Filter Logs
+        state.logs = state.logs.filter(l => !(Math.abs(l.amount) === amountToPurge || (l.description && l.description.includes('170000'))));
+
+        console.log(`Maintenance complete. Removed ${initialTxCount - state.transactions.length} transactions.`);
+        localStorage.setItem('repair_170k_v2', 'done');
+        localStorage.setItem('financeStateV10', JSON.stringify(state));
+    }
+
+    let historyStack = JSON.parse(localStorage.getItem('historyStackV10')) || [];
 
     const captureHistory = () => {
         historyStack.push(JSON.stringify(state));
-        if (historyStack.length > 20) historyStack.shift();
+        if (historyStack.length > 30) historyStack.shift();
+        localStorage.setItem('historyStackV10', JSON.stringify(historyStack));
         const undoBtn = document.getElementById('undo-btn');
         if (undoBtn) undoBtn.style.display = 'block';
+    };
+
+    const addLog = (module, action, description, amount = 0, relatedId = null) => {
+        const entry = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            timestamp: new Date().toISOString(),
+            module: module, // 'cashflow', 'investments', 'liabilities', 'system'
+            action: action, // 'add', 'edit', 'delete', 'settle', 'trade', 'balance'
+            description: description,
+            amount: amount,
+            relatedId: relatedId
+        };
+        state.logs.unshift(entry);
+        if (state.logs.length > 500) state.logs.pop(); // 保持 500 筆上限
     };
 
     document.getElementById('undo-btn')?.addEventListener('click', () => {
         if (historyStack.length > 0) {
             state = JSON.parse(historyStack.pop());
+            localStorage.setItem('historyStackV10', JSON.stringify(historyStack));
             saveState(false);
 
             const undoBtn = document.getElementById('undo-btn');
             if (historyStack.length === 0 && undoBtn) undoBtn.style.display = 'none';
-            alert('已為您無痕復原上一個操作！');
+            alert('已為您持久化復原上一個操作！');
         }
     });
+
+    if (historyStack.length > 0) {
+        const undoBtn = document.getElementById('undo-btn');
+        if (undoBtn) undoBtn.style.display = 'block';
+    }
 
     document.addEventListener('click', (e) => {
         if (e.target.closest('#edit-cash-btn')) {
@@ -479,6 +536,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let result = prompt("請輸入您目前擁有的現金/銀行存款總餘額 (NT$): \n(這筆資金將會構成總資產的基準)", currentCash);
             if (result !== null && !isNaN(parseFloat(result))) {
                 captureHistory();
+                const diff = parseFloat(result) - state.baseCash;
+                addLog('system', 'balance', `手動調整現金基準餘額為 NT$ ${parseFloat(result).toLocaleString()}`, diff);
                 state.baseCash = parseFloat(result);
                 saveState();
             }
@@ -494,11 +553,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('t-date')) document.getElementById('t-date').value = today;
 
     const saveState = (recordToLocal = true) => {
-        if (recordToLocal) localStorage.setItem('financeStateV9', JSON.stringify(state));
+        if (recordToLocal) localStorage.setItem('financeStateV10', JSON.stringify(state));
         updateDashboard(false);
         renderTransactions();
         renderInvestments();
         renderDebts();
+        renderHistory();
     };
 
     const getCalculatedData = () => {
@@ -679,12 +739,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (editingState.txId) {
                 const idx = state.transactions.findIndex(t => t.id === editingState.txId);
-                if (idx !== -1) state.transactions[idx] = { ...state.transactions[idx], ...txData };
+                if (idx !== -1) {
+                    addLog('cashflow', 'edit', `修改紀錄: ${txData.category}`, txData.type === 'income' ? txData.amount : -txData.amount);
+                    state.transactions[idx] = { ...state.transactions[idx], ...txData };
+                }
                 editingState.txId = null;
                 const btn = document.querySelector('#transaction-form .submit-btn');
                 btn.innerHTML = '加入紀錄'; btn.style.background = '';
             } else {
                 txData.id = Date.now().toString();
+                addLog('cashflow', 'add', `新增紀錄: ${txData.category}`, txData.type === 'income' ? txData.amount : -txData.amount);
                 state.transactions.unshift(txData);
             }
             saveState(); fForm.reset(); document.getElementById('t-date').value = today;
@@ -734,6 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (editingState.invId) {
                 const idx = state.investments.findIndex(i => i.id === editingState.invId);
                 if (idx !== -1) {
+                    addLog('investments', 'edit', `修改部位資料: ${invData.symbol}`);
                     invData.currentPrice = state.investments[idx].currentPrice;
                     state.investments[idx] = { ...state.investments[idx], ...invData };
                 }
@@ -744,12 +809,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let invId = Date.now().toString();
                 let existingIdx = state.investments.findIndex(i => i.symbol === symbol && i.type === type);
                 if (existingIdx !== -1) {
+                    addLog('investments', 'add', `合併加碼部位: ${symbol}`, -invData.totalCost);
                     state.investments[existingIdx].amount += invData.amount;
                     state.investments[existingIdx].totalCost += invData.totalCost;
                     state.investments[existingIdx].currentPrice = (state.investments[existingIdx].totalCost / state.investments[existingIdx].amount);
                     invId = state.investments[existingIdx].id; // 取得原有的 ID
                     alert(`聰明合併：發現您已有 [ ${symbol} ]。系統已主動為您合併入現有庫存並重新計算均價！`);
                 } else {
+                    addLog('investments', 'add', `新增投資部位: ${symbol}`, -invData.totalCost);
                     invData.id = invId;
                     state.investments.push(invData);
                 }
@@ -794,16 +861,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (editingState.debtId) {
                 const idx = state.debts.findIndex(d => d.id === editingState.debtId);
-                if (idx !== -1) state.debts[idx] = { ...state.debts[idx], ...debtData };
+                if (idx !== -1) {
+                    addLog('liabilities', 'edit', `修改貸款資訊: ${debtData.name}`);
+                    state.debts[idx] = { ...state.debts[idx], ...debtData };
+                }
                 editingState.debtId = null;
                 const btn = document.querySelector('#debt-form .submit-btn');
                 btn.innerHTML = '新增負債紀錄'; btn.style.background = 'linear-gradient(135deg, #f43f5e, #f97316)';
             } else {
                 debtData.id = Date.now().toString();
+                addLog('liabilities', 'add', `新增貸款: ${debtData.name}`, syncCash ? debtData.total : 0);
                 state.debts.push(debtData);
 
                 // [連動系統] 僅當用戶勾選「同步產生收入」時才增加現金
-                const syncCash = document.getElementById('d-sync-cash')?.checked;
                 if (syncCash) {
                     state.transactions.unshift({
                         id: 'sys-debt-' + Date.now(),
@@ -884,6 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const action = document.getElementById('bm-action') ? document.getElementById('bm-action').value : 'buy';
 
             if (action === 'buy') {
+                addLog('investments', 'trade', `加碼買進: ${target.symbol}`, -cost);
                 target.totalCost += cost;
                 target.amount += amount;
 
@@ -903,6 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return alert(`賣出無效保護：您填寫的需求賣出數量 (${amount}) 大於目前的庫存總量 (${target.amount})！`);
                 }
                 let avgCost = target.totalCost / target.amount;
+                addLog('investments', 'trade', `賣出部位: ${target.symbol}`, cost);
                 target.amount -= amount;
                 target.totalCost -= (amount * avgCost);
                 if (target.amount <= 0.00000001) {
@@ -1009,6 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             modal.querySelector('#del-only').onclick = () => {
                 captureHistory();
+                addLog('liabilities', 'delete', `刪除貸款項目 (保留還款紀錄): ${item.name}`);
                 // 解除所有關聯交易的「系統鎖定」
                 state.transactions.forEach(t => {
                     if (t.linkId === id) delete t.linkId;
@@ -1019,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             modal.querySelector('#del-both').onclick = () => {
                 captureHistory();
+                addLog('liabilities', 'delete', `完整刪除貸款與所有還款紀錄: ${item.name}`);
                 state.transactions = state.transactions.filter(t => t.linkId !== id);
                 state.debts = state.debts.filter(d => d.id !== id);
                 saveState();
@@ -1038,6 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentBalance = calculateBalance(item);
             if (confirm(`確定要提前結清「${item.name}」嗎？\n\n系統將產生一筆 NT$ ${Math.round(currentBalance).toLocaleString()} 的「貸款提前結清」支出，隨後將此負債結案。`)) {
                 captureHistory();
+                addLog('liabilities', 'settle', `提前結清貸款: ${item.name}`, -Math.round(currentBalance));
                 
                 // 1. 產生結清支出
                 state.transactions.unshift({
@@ -1089,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (confirm('確定刪除此收支紀錄嗎？')) {
                 captureHistory();
+                addLog('cashflow', 'delete', `刪除紀錄: ${item.category}`, item.type === 'income' ? -item.amount : item.amount);
                 state.transactions = state.transactions.filter(t => t.id !== id);
                 saveState();
             }
@@ -1101,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (confirm(`確定要刪除 [ ${targetInv.symbol} ] 嗎？\n\n這將會同步撤銷與此特定部位相關的所有自動交易紀錄 (例如買入支出)，以確保您的現金水位正確回歸。`)) {
                 captureHistory();
+                addLog('investments', 'delete', `刪除投資部位: ${targetInv.symbol}`);
                 // 1. 移除投資部位
                 state.investments = state.investments.filter(i => i.id !== id);
                 // 2. 精準連動撤銷：僅刪除 linkId 匹配的自動交易
@@ -1473,11 +1550,73 @@ document.addEventListener('DOMContentLoaded', () => {
         if (countDisplay) countDisplay.textContent = `已選擇 ${selectedIds[type].size} 項`;
     });
 
+    const getModuleLabel = (module) => {
+        const labels = { cashflow: '收支', investments: '投資', liabilities: '負債', system: '系統' };
+        return labels[module] || '未知';
+    };
+
+    const renderHistory = () => {
+        const listDiv = document.getElementById('history-list');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        
+        const filter = document.getElementById('log-filter-module')?.value || 'all';
+        let logs = state.logs;
+        if (filter !== 'all') logs = logs.filter(l => l.module === filter);
+
+        if (logs.length === 0) return listDiv.innerHTML = '<p class="tx-date" style="text-align:center; padding-top:20px;">尚無紀錄</p>';
+
+        logs.forEach(log => {
+            const time = new Date(log.timestamp).toLocaleString('zh-TW', { 
+                month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false 
+            });
+            const impactClass = log.amount > 0 ? 'pos' : (log.amount < 0 ? 'neg' : 'neu');
+            const impactSign = log.amount > 0 ? '+' : '';
+            const impactText = log.amount !== 0 ? `${impactSign}NT$ ${Math.round(Math.abs(log.amount)).toLocaleString()}` : '--';
+
+            listDiv.innerHTML += `
+                <div class="log-item">
+                    <div class="log-details" style="flex: 1;">
+                        <span class="log-module-tag tag-${log.module}">${getModuleLabel(log.module)}</span>
+                        <div class="item-name" style="font-size: 0.95rem; font-weight: 600;">${log.description}</div>
+                        <div class="log-time">${time}</div>
+                    </div>
+                    <div class="log-actions" style="display: flex; align-items: center; gap: 20px;">
+                        <div class="log-impact ${impactClass}" style="text-align: right; min-width: 100px;">${impactText}</div>
+                        <button class="action-btn log-undo-btn" data-id="${log.id}" title="快速撤銷 (僅限最近一次操作)" style="opacity: 0.6;"><i class="fa-solid fa-rotate-left"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+    };
+
+    document.getElementById('log-filter-module')?.addEventListener('change', renderHistory);
+    document.getElementById('clear-logs-btn')?.addEventListener('click', () => {
+        if (confirm('確定要清空所有操作紀錄嗎？(這不會影響您的資產數據)')) {
+            state.logs = [];
+            saveState();
+        }
+    });
+
+    // 歷史紀錄中的「快速撤銷」邏輯 (連動全域 Undo)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.log-undo-btn')) {
+            const logId = e.target.closest('.log-undo-btn').getAttribute('data-id');
+            const latestLog = state.logs[0];
+            if (latestLog && latestLog.id === logId) {
+                document.getElementById('undo-btn')?.click();
+            } else {
+                alert('抱歉，目前僅支援從歷史紀錄快速撤銷「最後一筆」操作。若需復原更早之前的動作，請直接點擊左下角的「復原上一步」按鈕。');
+            }
+        }
+    });
+
     initCharts();
     updateDashboard(true);
     renderTransactions();
     renderInvestments();
     renderDebts();
+    renderHistory();
     fetchPrices();
     processAutomaticRepayments();
 

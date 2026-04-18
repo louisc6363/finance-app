@@ -27,6 +27,7 @@
                 <li><a href="#" data-page="cashflow"><i class="fa-solid fa-money-bill-transfer"></i> 收支分析</a></li>
                 <li><a href="#" data-page="investments"><i class="fa-solid fa-chart-pie"></i> 投資組合</a></li>
                 <li><a href="#" data-page="liabilities"><i class="fa-solid fa-credit-card"></i> 負債管理</a></li>
+                <li><a href="#" data-page="history"><i class="fa-solid fa-clock-rotate-left"></i> 歷史紀錄</a></li>
             </ul>
         </nav>
 
@@ -341,6 +342,35 @@
                             </div>
                         </div>
                         <div class="transaction-list" id="debt-list">
+                            <!-- JS 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            <section id="history" class="page-section">
+                <header>
+                    <div class="greeting">
+                        <h2>全域活動紀錄</h2>
+                        <p>稽核您的所有財務操作，點擊紀錄可進行後續編輯或撤銷。</p>
+                    </div>
+                </header>
+                <div class="module-container" style="display: block;">
+                    <div class="card glass list-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin-bottom:0;">系統操作日誌</h3>
+                            <button class="manage-btn" id="clear-logs-btn" style="background: var(--danger); color: white; border: none;">清空紀錄</button>
+                        </div>
+                        
+                        <div class="filter-controls" style="margin-bottom: 20px;">
+                            <select id="log-filter-module" class="form-group" style="padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 100%;">
+                                <option value="all">所有模組 (All Modules)</option>
+                                <option value="cashflow">收支分析 (Cashflow)</option>
+                                <option value="investments">投資組合 (Investments)</option>
+                                <option value="liabilities">負債管理 (Liabilities)</option>
+                                <option value="system">系統平衡 (System/Balance)</option>
+                            </select>
+                        </div>
+
+                        <div class="transaction-list" id="history-list">
                             <!-- JS 動態生成 -->
                         </div>
                     </div>
