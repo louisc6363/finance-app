@@ -492,6 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.baseCash === undefined) state.baseCash = 0;
     if (!state.accounts) state.accounts = []; // 帳戶管理欄位
     if (state.reserveCash === undefined) state.reserveCash = 0; // 備用金 (Fixed Cash)
+    
+    // --- 財務目標與預算設定 (V11+) ---
+    if (state.monthlyBudget === undefined) state.monthlyBudget = 0;
+    if (state.savingsGoal === undefined) state.savingsGoal = 0;
 
     // --- Data Maintenance: Force Purge 170k Test Data ---
     if (!localStorage.getItem('repair_170k_v2')) {
@@ -801,11 +805,68 @@ document.addEventListener('DOMContentLoaded', () => {
         state.debts.forEach(d => {
             totalDebts += calculateBalance(d);
         });
-        let netWorth = totalAssets - totalDebts;
 
-        return { tIncome, tExpense, cashflowSurplus, investTotal, demandDeposit, reserveCash, currentCash, totalAssets, totalDebts, netWorth };
+        const netWorth = totalAssets - totalDebts;
+
+        // 【預算計算】
+        const budget = state.monthlyBudget || 0;
+        const budgetUsed = tExpense;
+        const budgetRemaining = Math.max(0, budget - budgetUsed);
+        const budgetProgress = Math.min(100, budget > 0 ? (budgetUsed / budget) * 100 : 0);
+
+        // 【目標計算】
+        const goal = state.savingsGoal || 0;
+        const savingsProgress = Math.min(100, goal > 0 ? (totalAssets / goal) * 100 : 0);
+
+        return {
+            tIncome, tExpense, cashflowSurplus, 
+            investTotal, currentCash, totalAssets,
+            totalDebts, netWorth,
+            demandDeposit, reserveCash,
+            budget, budgetUsed, budgetRemaining, budgetProgress,
+            goal, savingsProgress
+        };
     };
 
+    // --- 智能風險分析系統 ---
+    const getHistoricalAverages = () => {
+        const months = {};
+        state.transactions.forEach(t => {
+            if (t.type === 'expense') {
+                const month = t.date.substring(0, 7);
+                months[month] = (months[month] || 0) + Number(t.amount);
+            }
+        });
+        const values = Object.values(months);
+        if (values.length === 0) return 0;
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        return avg;
+    };
+
+    const analyzeSpendingRisk = (amount) => {
+        if (!amount || amount <= 0) return null;
+        
+        const data = getCalculatedData();
+        const avgMonthly = getHistoricalAverages();
+        const risks = [];
+
+        // 1. 預算衝擊
+        if (data.budget > 0 && (data.budgetUsed + amount) > data.budget) {
+            risks.push({ level: 'danger', msg: '🔴 超過本月剩餘預算' });
+        }
+
+        // 2. 歷史異常 (大於月均值 50% 定義為異常)
+        if (avgMonthly > 0 && amount > (avgMonthly * 0.5)) {
+            risks.push({ level: 'warning', msg: '🟡 金額異常：已達月均支出的 50% 以上' });
+        }
+
+        // 3. 流動性風險 (大於活期餘額 20%)
+        if (data.demandDeposit > 0 && amount > (data.demandDeposit * 0.2)) {
+            risks.push({ level: 'warning', msg: '🟠 流動性提醒：金額超過活期存款的 20%' });
+        }
+
+        return risks;
+    };
     const formatCurrency = (num) => 'NT$ ' + Math.abs(Math.round(num)).toLocaleString('en-US');
 
     // === Odometer 動畫引擎 ===
@@ -909,6 +970,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const heroBanner = document.getElementById('hero-banner');
         if (heroBanner) {
             heroBanner.classList.toggle('hero-negative', data.netWorth < 0);
+        }
+
+        // --- 目標與預算 UI 更新 (New) ---
+        const savingsPctEl = document.getElementById('savings-pct');
+        const savingsLabelEl = document.getElementById('savings-label');
+        const savingsBarEl = document.getElementById('savings-bar');
+        if (savingsPctEl) {
+            savingsPctEl.textContent = `${Math.round(data.savingsProgress)}%`;
+            const remainingGoal = Math.max(0, data.goal - data.totalAssets);
+            savingsLabelEl.textContent = remainingGoal > 0 ? `距離目標還差 NT$ ${Math.round(remainingGoal).toLocaleString()}` : '🎉 已達成目標！';
+            savingsBarEl.style.width = `${data.savingsProgress}%`;
+        }
+
+        const budgetRemEl = document.getElementById('budget-remaining');
+        const budgetPctEl = document.getElementById('budget-used-pct');
+        const budgetBarEl = document.getElementById('budget-bar');
+        if (budgetRemEl) {
+            budgetRemEl.textContent = `NT$ ${Math.round(data.budgetRemaining).toLocaleString()}`;
+            budgetPctEl.textContent = `已使用 ${Math.round(data.budgetProgress)}%`;
+            budgetBarEl.style.width = `${data.budgetProgress}%`;
+            
+            // 預算顏色警示
+            if (data.budgetProgress > 100) budgetBarEl.style.background = 'var(--danger)';
+            else if (data.budgetProgress > 80) budgetBarEl.style.background = 'var(--warning)';
+            else budgetBarEl.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
         }
 
         // 圓餅圖更新
@@ -1037,8 +1123,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.transactions.unshift(txData);
             }
             saveState(); fForm.reset(); document.getElementById('t-date').value = today;
+            document.getElementById('t-risk-indicator').innerHTML = ''; // 清除風險提示
         });
     }
+
+    // --- 智能風險分析即時觸發 ---
+    document.getElementById('t-amount')?.addEventListener('input', (e) => {
+        const amount = parseFloat(e.target.value);
+        const risks = analyzeSpendingRisk(amount);
+        const indicator = document.getElementById('t-risk-indicator');
+        if (!indicator) return;
+
+        if (risks && risks.length > 0) {
+            indicator.innerHTML = risks.map(r => `<div class="risk-item ${r.level}">${r.msg}</div>`).join('');
+        } else {
+            indicator.innerHTML = '';
+        }
+    });
+
+    // --- 目標與預算設定事件 ---
+    document.getElementById('set-goal-btn')?.addEventListener('click', () => {
+        const result = prompt('【設定長期存錢目標】\n請輸入您的目標資產總額 (NT$):', state.savingsGoal || 1000000);
+        if (result !== null && !isNaN(parseFloat(result))) {
+            state.savingsGoal = parseFloat(result);
+            saveState();
+        }
+    });
+
+    document.getElementById('set-budget-btn')?.addEventListener('click', () => {
+        const result = prompt('【設定每月支出預算】\n請輸入您每個月的預算上限 (NT$):', state.monthlyBudget || 20000);
+        if (result !== null && !isNaN(parseFloat(result))) {
+            state.monthlyBudget = parseFloat(result);
+            saveState();
+        }
+    });
 
     const iForm = document.getElementById('invest-form');
     if (iForm) {
