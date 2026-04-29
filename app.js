@@ -879,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isNeg = targetValue < 0;
         const absVal = Math.abs(Math.round(targetValue));
-        const numStr = absVal.toLocaleString('en-US'); // 例: "1,234,567"
+        const numStr = (isNeg ? '-' : '') + absVal.toLocaleString('en-US'); // Include minus sign if negative
 
         // 如果是負數，在 container 上標記 (CSS 需要處理色彩)
         container.classList.toggle('od-negative', isNeg);

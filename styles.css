@@ -238,6 +238,8 @@ input:focus, select:focus {
 
 .positive { color: var(--success); }
 .negative { color: var(--danger); }
+.hero-negative .card-value { color: var(--danger) !important; }
+.od-negative .od-digits, .od-negative .od-prefix { color: var(--danger) !important; }
 .text-default { color: var(--text-main); }
 .text-success { color: var(--success); }
 
