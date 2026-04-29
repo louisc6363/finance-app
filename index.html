@@ -298,9 +298,9 @@
                                 <input type="number" id="i-amount" placeholder="您目前持有的數量" step="any" required min="0">
                             </div>
                             <div class="form-group">
-                                <label style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span>平均買入單價</span>
-                                    <select id="i-currency" style="padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; cursor: pointer;">
+                                <label style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+                                    <span style="flex: 1; text-align: left;">平均買入單價</span>
+                                    <select id="i-currency" style="width: 70px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.75rem; cursor: pointer; text-align: center;">
                                         <option value="TWD">TWD</option>
                                         <option value="USD">USD</option>
                                         <option value="HKD">HKD</option>
@@ -320,7 +320,7 @@
                                     <span style="font-size:0.9rem; font-weight:600; color:var(--primary);">同步產生支出交易 (從現金池扣除)</span>
                                 </label>
                             </div>
-                            <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #38bdf8, #8b5cf6);">新增至投資組合</button>
+                            <button type="submit" class="submit-btn" style="margin-top: 20px;">新增至投資組合</button>
                         </form>
                     </div>
                     <div class="card glass list-card">
@@ -541,8 +541,8 @@
                             </div>
 
                             <div style="display: flex; gap: 10px;">
-                                <button type="button" id="ac-cancel-edit" class="submit-btn" style="flex:1; background:rgba(255,255,255,0.1); color:var(--text-main); display:none;">取消編輯</button>
-                                <button type="submit" id="ac-submit-btn" class="submit-btn" style="flex:2; background:#facc15; color:#1e1b4b; font-weight:bold; border-radius:30px;">確定添加</button>
+                                <button type="button" id="ac-cancel-edit" class="submit-btn" style="background:rgba(255,255,255,0.1); color:var(--text-main); display:none;">取消編輯</button>
+                                <button type="submit" id="ac-submit-btn" class="submit-btn">確定添加</button>
                             </div>
                         </form>
                     </div>
