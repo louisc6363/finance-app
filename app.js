@@ -770,8 +770,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const txTime = new Date(t.date).getTime();
             const amount = Number(t.amount);
 
-            if (t.type === 'income') cumulativeSurplus += amount;
-            else if (t.type === 'expense') cumulativeSurplus -= amount;
+            // 【精準排除】如果交易已經綁定特定帳戶，則不計入舊有的累積池，避免重複計算
+            if (!t.accountId) {
+                if (t.type === 'income') cumulativeSurplus += amount;
+                else if (t.type === 'expense') cumulativeSurplus -= amount;
+            }
 
             if (txTime >= startOfMonth && txTime <= endOfMonth) {
                 if (t.type === 'income') tIncome += amount;
@@ -792,13 +795,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 【核心修正】獨立雙水槽模型
-        // 活期存餘 = 活期期初(baseCash) + 交易累積
-        const demandDeposit = state.baseCash + cumulativeSurplus;
-        // 備用金 = 備用金期初(reserveCash)
-        const reserveCash = state.reserveCash || 0;
+        // 【核心修正】多維度現金模型
+        // 1. 傳統現金池 (Legacy): 包含初始現金與未分類的日常交易
+        const legacyCashPool = state.baseCash + cumulativeSurplus + (state.reserveCash || 0);
         
-        const currentCash = demandDeposit + reserveCash; 
+        // 2. 帳戶管理池 (Accounts): 包含所有新增的銀行帳戶與電子錢包
+        let accountsCashPool = 0;
+        if (state.accounts && state.accounts.length > 0) {
+            state.accounts.forEach(acc => {
+                if (acc.includeInAssets !== false) {
+                    let bal = Number(acc.balance) || 0;
+                    // 匯率換算處理 (暫時預設 USD 為 32.5)
+                    let rate = 1;
+                    if (acc.currency === 'USD') rate = 32.5;
+                    accountsCashPool += (bal * rate);
+                }
+            });
+        }
+        
+        // 最終總現金 = 傳統池 + 帳戶池
+        const currentCash = legacyCashPool + accountsCashPool; 
 
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
