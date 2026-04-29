@@ -2564,5 +2564,5 @@ const ACCOUNT_PROVIDERS = {
     // 將 renderAccounts 給 global
     window.renderAccounts = renderAccounts;
     setupAccountForm();
-
-renderAccounts();
+    renderAccounts();
+});
