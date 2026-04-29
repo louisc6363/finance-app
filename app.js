@@ -1258,8 +1258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.investments.push(invData);
                 }
 
-                // [連動系統] 僅當用戶勾選「同步產生支出」時才扣除現金
-                const syncCash = document.getElementById('i-sync-cash')?.checked;
+                // [開帳系統] 判斷模式：期初開帳 vs 新增交易
+                const modeInput = document.querySelector('input[name="i-mode"]:checked');
+                const syncCash = modeInput && modeInput.value === 'trade';
+                
                 if (syncCash) {
                     const accId = invData.accountId;
                     state.transactions.unshift({
@@ -1291,7 +1293,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (!document.getElementById('d-total').value) return;
             captureHistory();
-            const syncCash = document.getElementById('d-sync-cash')?.checked;
+            // [開帳系統] 判斷模式：既有貸款 vs 新增貸款
+            const mode = document.querySelector('input[name="d-mode"]:checked').value;
+            const syncCash = (mode === 'new');
             const debtData = {
                 bank: document.getElementById('d-bank').value,
                 repayBank: document.getElementById('d-repay-bank').value,

@@ -323,14 +323,25 @@
                                 </label>
                                 <input type="number" id="i-cost" placeholder="請輸入您買入時的平均單一價格 (上方自選幣別)" step="any" required min="0">
                             </div>
-                            <div class="form-group" style="padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
-                                <label class="ios-switch-label" style="display:flex; align-items:center; cursor:pointer;" title="取消勾選此項可建立『期初資產』，系統將不會從目前的現金中扣除買入成本。">
-                                    <div class="ios-switch" style="margin-right: 12px;">
-                                        <input type="checkbox" id="i-sync-cash" checked>
-                                        <span class="ios-slider"></span>
+                            <!-- 專業期初開帳系統 -->
+                            <div class="migration-mode-box" style="margin-top: 15px; padding: 15px; border-radius: 12px; border: 1px dashed rgba(56,189,248,0.4); background: rgba(56,189,248,0.05);">
+                                <div style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px; letter-spacing: 1px;">數據導入模式</div>
+                                <label class="mode-selector" style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                                    <input type="radio" name="i-mode" value="migration" checked style="margin-right: 10px;">
+                                    <div style="flex:1;">
+                                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">期初開帳 (Migration)</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">補錄過往已持有之資產，不觸發錢包扣款。</div>
                                     </div>
-                                    <span style="font-size:0.9rem; font-weight:600; color:var(--primary);">同步產生支出交易 (從現金池扣除)</span>
                                 </label>
+                                <label class="mode-selector" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="i-mode" value="trade" style="margin-right: 10px;">
+                                    <div style="flex:1;">
+                                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">新增交易 (New Trade)</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">今日買入之部位，系統將自動從所選帳戶扣除成本。</div>
+                                    </div>
+                                </label>
+                                <!-- 隱藏原本的開關，保持邏輯相容 -->
+                                <input type="checkbox" id="i-sync-cash" style="display:none;">
                             </div>
                             <button type="submit" class="submit-btn" style="margin-top: 20px;">新增至投資組合</button>
                         </form>
@@ -412,14 +423,25 @@
                                 <input type="number" id="d-paydate" placeholder="如：5號扣款請輸入 5" required min="1" max="31">
                             </div>
 
-                            <div class="form-group" style="padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
-                                <label class="ios-switch-label" style="display:flex; align-items:center; cursor:pointer;" title="取消勾選此項可建立『期初負債』，系統將不會增加目前的現金水位。">
-                                    <div class="ios-switch" style="margin-right: 12px;">
-                                        <input type="checkbox" id="d-sync-cash">
-                                        <span class="ios-slider"></span>
+                            <!-- 專業期初開帳系統 -->
+                            <div class="migration-mode-box" style="margin-top: 15px; padding: 15px; border-radius: 12px; border: 1px dashed rgba(244,63,94,0.4); background: rgba(244,63,94,0.05);">
+                                <div style="font-size: 0.85rem; font-weight: 800; color: #f43f5e; margin-bottom: 10px; letter-spacing: 1px;">數據導入模式</div>
+                                <label class="mode-selector" style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;">
+                                    <input type="radio" name="d-mode" value="migration" checked style="margin-right: 10px;">
+                                    <div style="flex:1;">
+                                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">既有貸款 (Opening Balance)</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">補錄使用本系統前已存在之債務，不產生撥款收入。</div>
                                     </div>
-                                    <span style="font-size:0.9rem; font-weight:600; color:var(--danger);">同步產生收入交易 (增加現金水位)</span>
                                 </label>
+                                <label class="mode-selector" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="d-mode" value="new" style="margin-right: 10px;">
+                                    <div style="flex:1;">
+                                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">新增貸款 (New Loan)</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">今日剛核貸之債務，系統將自動增加錢包現金水位。</div>
+                                    </div>
+                                </label>
+                                <!-- 隱藏原本的開關，保持邏輯相容 -->
+                                <input type="checkbox" id="d-sync-cash" style="display:none;">
                             </div>
 
                             <!-- Realtime Interest Rate Extrapolator Display -->
@@ -534,10 +556,10 @@
                             </div>
 
                             <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                                <label style="margin-bottom:0; min-width: 80px;">餘額</label>
+                                <label style="margin-bottom:0; min-width: 140px; font-weight: 700; color: var(--accent-main);">期初開帳餘額</label>
                                 <div style="display:flex; align-items:center;">
-                                    <span style="font-weight:bold; margin-right:5px;">$</span>
-                                    <input type="number" id="ac-balance" placeholder="0" min="0" step="any" style="background:transparent; border:none; text-align:right; width:100px; outline:none; color:var(--text-main); font-weight:bold; font-size: 1.1rem;">
+                                    <span style="font-weight:bold; margin-right:5px; color: var(--accent-main);">$</span>
+                                    <input type="number" id="ac-balance" placeholder="請輸入錢包起始金額" min="0" step="any" style="background:transparent; border:none; text-align:right; width:140px; outline:none; color:var(--text-main); font-weight:bold; font-size: 1.1rem;">
                                 </div>
                             </div>
 
