@@ -2137,7 +2137,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         fetchPrices();
     }, 60000);
-});
 
 // ============================================================
 // === 帳戶管理模組 (Account Management Module) - 獨立區塊 ===
