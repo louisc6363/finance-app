@@ -1470,7 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = document.createElement('div');
             modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(10px);";
             modal.innerHTML = `
-                <div class="card glass" style="width:360px; padding:30px; text-align:center; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="card glass" style="width:420px; max-width: 90%; padding:30px; text-align:center; border: 1px solid rgba(255,255,255,0.1);">
                     <h3 style="margin-bottom:15px; color:var(--text-main);">刪除負債確認</h3>
                     <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:25px; line-height:1.5;">您要如何處理這筆負債？</p>
                     <button id="del-only" class="submit-btn" style="width:100%; margin-bottom:12px; background:var(--primary);">僅刪除項目</button>

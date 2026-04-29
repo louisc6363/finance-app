@@ -71,24 +71,7 @@
     opacity: 1;
 }
 
-.action-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    color: var(--text-muted);
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--text-main);
-}
+/* .action-btn styles have been centralized in styles.css */
 
 .del-tx-btn:hover, .del-inv-btn:hover, .del-debt-btn:hover {
     background: rgba(239, 68, 68, 0.3);
