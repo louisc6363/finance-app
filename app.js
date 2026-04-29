@@ -2205,6 +2205,18 @@ const ACCOUNT_PROVIDERS = {
         { code:"GP",   name:"Google Pay",           color:"#4285f4" },
         { code:"AP",   name:"Apple Pay",            color:"#555555" },
     ],
+    crypto: [
+        { code:"BNB",  name:"Binance (幣安)",      color:"#f3ba2f" },
+        { code:"OKX",  name:"OKX (歐易)",          color:"#000000" },
+        { code:"MAX",  name:"MAX (台灣交易所)",     color:"#20409a" },
+        { code:"HOYA", name:"HOYABIT",            color:"#00b4d8" },
+        { code:"BYB",  name:"Bybit",               color:"#ffb11a" },
+        { code:"BTB",  name:"BitoPro (幣託)",      color:"#004fa3" },
+        { code:"ACE",  name:"ACE (王牌)",          color:"#00b0ff" },
+        { code:"MM",   name:"MetaMask",            color:"#e2761b" },
+        { code:"HW",   name:"Cold Wallet (硬體錢包)", color:"#4a4a4a" },
+        { code:"OT",   name:"Other Exchange",      color:"#6b7280" },
+    ],
     cash: [
         { code:"CASH", name:"實體現金 / 錢包",      color:"#f59e0b" },
     ]
