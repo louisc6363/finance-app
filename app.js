@@ -2497,6 +2497,7 @@ const ACCOUNT_PROVIDERS = {
         const resetForm = () => {
             form.reset();
             document.getElementById('ac-id').value = '';
+            document.getElementById('ac-name').value = '';
             document.getElementById('ac-provider').value = '';
             document.getElementById('ac-picker-label').innerHTML = `請選擇銀行或錢包`;
             document.getElementById('ac-icon-preview').innerHTML = `<i class="fa-solid fa-building-columns" style="opacity:0.3;"></i>`;
@@ -2524,9 +2525,12 @@ const ACCOUNT_PROVIDERS = {
             if (walletDictionary.some(w => w.name === providerName)) detectedType = 'wallet';
             else if (bankDictionary.some(b => b.name === providerName)) detectedType = 'bank';
 
+            const accountNameInput = document.getElementById('ac-name').value.trim();
+            const finalAccountName = accountNameInput || providerName; // Fallback to provider name
+
             const newAcc = {
                 id: editId || ('acc-' + Date.now()),
-                name: document.getElementById('ac-name').value.trim(),
+                name: finalAccountName,
                 remark: document.getElementById('ac-remark').value.trim(),
                 type: detectedType,
                 provider: providerName,
