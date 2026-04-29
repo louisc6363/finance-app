@@ -816,6 +816,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 最終總現金 = 傳統池 + 帳戶池
         const currentCash = legacyCashPool + accountsCashPool; 
 
+        // 為相容舊有 UI 顯示，定義回傳變數
+        const demandDeposit = currentCash; 
+        const reserveCash = state.reserveCash || 0;
+
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
         state.debts.forEach(d => {
