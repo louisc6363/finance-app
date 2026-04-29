@@ -1101,11 +1101,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             captureHistory();
 
+            const accId = document.getElementById('t-account').value;
             const txData = {
                 type: document.getElementById('t-type').value,
                 amount: parseFloat(document.getElementById('t-amount').value),
                 category: document.getElementById('t-category').value,
-                date: document.getElementById('t-date').value
+                date: document.getElementById('t-date').value,
+                accountId: accId
             };
 
             if (editingState.txId) {
@@ -1121,8 +1123,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 txData.id = Date.now().toString();
                 addLog('cashflow', 'add', `新增紀錄: ${txData.category}`, txData.type === 'income' ? txData.amount : -txData.amount);
                 state.transactions.unshift(txData);
+
+                // 更新實體帳戶餘額
+                if (accId) {
+                    const accIdx = state.accounts.findIndex(a => a.id === accId);
+                    if (accIdx !== -1) {
+                        if (txData.type === 'income') state.accounts[accIdx].balance += txData.amount;
+                        else state.accounts[accIdx].balance -= txData.amount;
+                    }
+                }
             }
             saveState(); fForm.reset(); document.getElementById('t-date').value = today;
+            renderAccounts(); // 刷新帳戶顯示
             document.getElementById('t-risk-indicator').innerHTML = ''; // 清除風險提示
         });
     }
@@ -1190,12 +1202,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             captureHistory();
 
+            const accId = document.getElementById('i-account').value;
             const invData = {
                 type: type,
                 symbol: symbol,
                 amount: inputAmount,
                 totalCost: calculatedTotalCost,
-                currentPrice: inputAvgCost
+                currentPrice: inputAvgCost,
+                accountId: accId
             };
 
             if (editingState.invId) {
@@ -1227,6 +1241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // [連動系統] 僅當用戶勾選「同步產生支出」時才扣除現金
                 const syncCash = document.getElementById('i-sync-cash')?.checked;
                 if (syncCash) {
+                    const accId = invData.accountId;
                     state.transactions.unshift({
                         id: 'sys-' + Date.now(),
                         type: 'expense',
@@ -1234,11 +1249,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         category: '[系統] 投資買入',
                         date: today,
                         relatedAsset: symbol,
-                        linkId: invId // [精準連動] 綁定此部位專屬 ID
+                        linkId: invId,
+                        accountId: accId
                     });
+
+                    // 更新帳戶餘額
+                    if (accId) {
+                        const accIdx = state.accounts.findIndex(a => a.id === accId);
+                            state.accounts[accIdx].balance -= calculatedTotalCost;
+                        }
+                    }
                 }
-            }
-            saveState(); iForm.reset(); fetchPrices();
+                saveState(); iForm.reset(); fetchPrices();
+                renderAccounts(); // 刷新帳戶顯示
         });
     }
 
@@ -1362,6 +1385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 target.amount += amount;
 
                 // [連動系統]
+                const accId = target.accountId;
                 state.transactions.unshift({
                     id: 'sys-' + Date.now(),
                     type: 'expense',
@@ -1369,9 +1393,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     category: '[系統] 投資買入',
                     date: today,
                     relatedAsset: target.symbol,
-                    linkId: target.id // [精準連動]
+                    linkId: target.id,
+                    accountId: accId
                 });
-                alert(`買進成功！我們已自動為您記錄一筆現金流支出。`);
+
+                if (accId) {
+                    const accIdx = state.accounts.findIndex(a => a.id === accId);
+                    if (accIdx !== -1) state.accounts[accIdx].balance -= cost;
+                }
+                alert(`買進成功！我們已自動為您在「${state.accounts.find(a => a.id === accId)?.name || '預設'}」帳戶記錄一筆支出。`);
             } else if (action === 'sell') {
                 if (amount > target.amount) {
                     return alert(`賣出無效保護：您填寫的需求賣出數量 (${amount}) 大於目前的庫存總量 (${target.amount})！`);
@@ -1386,6 +1416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // [連動系統]
+                const accId = target.accountId;
                 state.transactions.unshift({
                     id: 'sys-' + Date.now(),
                     type: 'income',
@@ -1393,15 +1424,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     category: '[系統] 投資賣出',
                     date: today,
                     relatedAsset: target.symbol,
-                    linkId: target.id // [精準連動]
+                    linkId: target.id,
+                    accountId: accId
                 });
-                alert(`賣出成功！變現資金已轉回現金水位。`);
+
+                if (accId) {
+                    const accIdx = state.accounts.findIndex(a => a.id === accId);
+                    if (accIdx !== -1) state.accounts[accIdx].balance += cost;
+                }
+                alert(`賣出成功！我們已自動為您在「${state.accounts.find(a => a.id === accId)?.name || '預設'}」帳戶記錄一筆收入。`);
             }
 
             saveState();
             bmForm.reset();
             rmResult.innerHTML = '';
             buyModal.classList.remove('show');
+            renderAccounts(); // 刷新帳戶顯示
+            fetchPrices(); // 刷新市價
         });
     }
 
@@ -1437,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('t-amount').value = item.amount;
                 document.getElementById('t-category').value = item.category;
                 document.getElementById('t-date').value = item.date;
+                document.getElementById('t-account').value = item.accountId || '';
                 editingState.txId = id;
                 const btn = document.querySelector('#transaction-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -1454,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('i-amount').value = item.amount;
                 let avgCost = item.amount > 0 ? (item.totalCost / item.amount).toFixed(2) : '';
                 document.getElementById('i-cost').value = avgCost;
+                document.getElementById('i-account').value = item.accountId || '';
                 editingState.invId = id;
                 const btn = document.querySelector('#invest-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -1720,6 +1761,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const isChecked = selectedIds.inv.has(i.id);
 
+                const accName = state.accounts?.find(a => a.id === i.accountId)?.name || '未指定錢包';
                 contentDiv.innerHTML += `
                     <div class="asset-item">
                         <div class="item-checkbox-container">
@@ -1728,7 +1770,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="tx-info">
                             <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
                             <div class="tx-details">
-                                <div class="item-name">${i.symbol}</div>
+                                <div class="item-name">${i.symbol} <span style="font-size:0.7rem; color:var(--primary); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; margin-left:5px;">${accName}</span></div>
                                 <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
                             </div>
                         </div>
@@ -2288,6 +2330,27 @@ const ACCOUNT_PROVIDERS = {
         }
     };
 
+    // --- 刷新所有下拉選單中的帳戶列表 ---
+    function refreshAccountSelectors() {
+        const selectors = document.querySelectorAll('.account-selector');
+        const stateObj = JSON.parse(localStorage.getItem('financeStateV10')) || {};
+        const accounts = stateObj.accounts || [];
+        
+        selectors.forEach(select => {
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- 請選擇帳戶 --</option>';
+            accounts.forEach(acc => {
+                const opt = document.createElement('option');
+                opt.value = acc.id;
+                opt.textContent = `${acc.name} (${acc.provider})`;
+                select.appendChild(opt);
+            });
+            if (currentVal && accounts.some(a => a.id === currentVal)) {
+                select.value = currentVal;
+            }
+        });
+    }
+
     // --- 渲染帳戶清單 ---
     function renderAccounts() {
         const listDiv = document.getElementById('account-list');
@@ -2371,6 +2434,9 @@ const ACCOUNT_PROVIDERS = {
         });
 
         if (totalDisplay) totalDisplay.textContent = `總餘額 NT$ ${Math.round(totalBalance).toLocaleString()}`;
+        
+        // 每次渲染完帳戶列表，同步更新所有下拉選單
+        refreshAccountSelectors();
 
         // 綁定編輯
         listDiv.querySelectorAll('.edit-acc-btn').forEach(btn => {
@@ -2499,3 +2565,4 @@ const ACCOUNT_PROVIDERS = {
     window.renderAccounts = renderAccounts;
     setupAccountForm();
 
+renderAccounts();
