@@ -1473,10 +1473,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card glass" style="width:360px; padding:30px; text-align:center; border: 1px solid rgba(255,255,255,0.1);">
                     <h3 style="margin-bottom:15px; color:var(--text-main);">刪除負債確認</h3>
                     <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:25px; line-height:1.5;">您要如何處理這筆負債？</p>
-                    <button id="del-only" class="submit-btn" style="width:100%; margin-bottom:12px; background:var(--primary); font-size:0.9rem;">僅刪除負債項目</button>
-                    <button id="del-both" class="submit-btn" style="width:100%; margin-bottom:20px; background:var(--danger); font-size:0.9rem;">同步移除所有扣款紀錄</button>
+                    <button id="del-only" class="submit-btn" style="width:100%; margin-bottom:12px; background:var(--primary);">僅刪除項目</button>
+                    <button id="del-both" class="submit-btn" style="width:100%; margin-bottom:20px; background:var(--danger);">刪除項目與紀錄</button>
                     <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top:15px;">
-                        <button id="del-cancel" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.9rem;">取消並返回</button>
+                        <button id="del-cancel" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">取消</button>
                     </div>
                 </div>
             `;
@@ -1740,8 +1740,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                             <div class="item-actions" style="gap: 5px;">
-                                <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">買</button>
-                                <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: #ffffff; border: none; padding: 5px 15px; font-weight: 600; border-radius: 6px;">賣</button>
+                                <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: white; border:none;">買入</button>
+                                <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: white; border:none;">賣出</button>
                                 <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
                                 <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
                             </div>
