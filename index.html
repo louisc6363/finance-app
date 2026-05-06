@@ -556,7 +556,7 @@
                             </div>
 
                             <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                                <label style="margin-bottom:0; min-width: 140px; font-weight: 700; color: var(--accent-main);">期初開帳餘額</label>
+                                <label id="ac-balance-label" style="margin-bottom:0; min-width: 140px; font-weight: 700; color: var(--accent-main);">期初開帳餘額</label>
                                 <div style="display:flex; align-items:center;">
                                     <span style="font-weight:bold; margin-right:5px; color: var(--accent-main);">$</span>
                                     <input type="number" id="ac-balance" placeholder="請輸入錢包起始金額" min="0" step="any" style="background:transparent; border:none; text-align:right; width:140px; outline:none; color:var(--text-main); font-weight:bold; font-size: 1.1rem;">
@@ -663,6 +663,7 @@
             <!-- 分頁標籤 -->
             <div class="picker-tabs">
                 <button class="picker-tab active" data-tab="bank">🏦 銀行</button>
+                <button class="picker-tab" data-tab="securities">📈 證券/複委託</button>
                 <button class="picker-tab" data-tab="wallet">📱 支付</button>
                 <button class="picker-tab" data-tab="crypto">🔗 加密貨幣</button>
                 <button class="picker-tab" data-tab="cash">💵 現金</button>

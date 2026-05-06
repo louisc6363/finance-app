@@ -2209,6 +2209,18 @@ const ACCOUNT_PROVIDERS = {
         { code:"GP",   name:"Google Pay",           color:"#4285f4" },
         { code:"AP",   name:"Apple Pay",            color:"#555555" },
     ],
+    securities: [
+        { code:"808S", name:"玉山證券",              color:"#009a44" },
+        { code:"806S", name:"元大證券",              color:"#1a1a6e" },
+        { code:"013S", name:"國泰證券",              color:"#009a4e" },
+        { code:"012S", name:"富邦證券",              color:"#005bac" },
+        { code:"809S", name:"凱基證券",              color:"#e60026" },
+        { code:"2888", name:"新光證券",              color:"#e60012" },
+        { code:"2885", name:"群益金鼎證券",           color:"#e60026" },
+        { code:"017S", name:"兆豐證券",              color:"#005bac" },
+        { code:"812S", name:"台新證券",              color:"#c8102e" },
+        { code:"007S", name:"第一金證券",            color:"#0059a9" },
+    ],
     crypto: [
         { code:"BNB",  name:"Binance (幣安)",      color:"#f3ba2f" },
         { code:"OKX",  name:"OKX (歐易)",          color:"#000000" },
@@ -2308,6 +2320,33 @@ const ACCOUNT_PROVIDERS = {
                     </div>
                     <span style="font-weight:600;">${p.name}</span>
                     <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">${p.code}</span>`;
+                
+                // 動態修改表單標籤：如果是證券或加密貨幣，提示輸入閒置資金
+                const providerType = Object.entries(ACCOUNT_PROVIDERS).find(([k, arr]) => arr.includes(p))?.[0];
+                const balLabel = document.getElementById('ac-balance-label');
+                const balInput = document.getElementById('ac-balance');
+                if (balLabel && balInput) {
+                    if (providerType === 'securities' || providerType === 'crypto') {
+                        balLabel.innerHTML = '<span style="color:#f59e0b;">穩定幣 / 交割金</span>';
+                        balInput.placeholder = '若無請填 0';
+                        // 尋找或建立提示元素
+                        let tipEl = document.getElementById('ac-invest-tip');
+                        if (!tipEl) {
+                            tipEl = document.createElement('div');
+                            tipEl.id = 'ac-invest-tip';
+                            tipEl.style.cssText = 'font-size:0.75rem; color:var(--text-muted); margin-top:-10px; margin-bottom:15px; grid-column:1/-1; line-height:1.4;';
+                            balLabel.parentElement.insertAdjacentElement('afterend', tipEl);
+                        }
+                        tipEl.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--accent-main); margin-right:4px;"></i> 您的股票或加密現貨，請於帳戶建立後，至右側「投資組合」新增，系統將自動加總估值。';
+                        tipEl.style.display = 'block';
+                    } else {
+                        balLabel.innerHTML = '期初開帳餘額';
+                        balInput.placeholder = '請輸入起始金額';
+                        const tipEl = document.getElementById('ac-invest-tip');
+                        if (tipEl) tipEl.style.display = 'none';
+                    }
+                }
+                
                 closePicker();
             });
             gridEl.appendChild(card);
@@ -2407,23 +2446,42 @@ const ACCOUNT_PROVIDERS = {
         }
 
         let totalBalance = 0;
+        // 取得全域的損益設定 (若無則預設為 true)
+        const includePnl = typeof window !== 'undefined' && document.getElementById('toggle-pnl') ? document.getElementById('toggle-pnl').checked : true;
+
         accounts.forEach(acc => {
             const providerInfo = providerDictionary.find(p => p.name === acc.provider || p.code === acc.provider);
             const color = acc.color || providerInfo?.color || '#6366f1';
-            let bal = Number(acc.balance) || 0;
+            let idleCash = Number(acc.balance) || 0;
             const currency = acc.currency || 'TWD';
             
-            // 換算總額
+            // 計算綁定此帳戶的現貨資產市值 (TWD)
+            let linkedAssetsValueTWD = 0;
+            (stateObj.investments || []).forEach(inv => {
+                if (inv.accountId === acc.id) {
+                    const price = includePnl ? (Number(inv.currentPrice) || 0) : (Number(inv.avgPrice) || 0);
+                    const valTWD = (Number(inv.amount) || 0) * price;
+                    linkedAssetsValueTWD += valTWD;
+                }
+            });
+            
+            // 匯率換算
             let rate = 1;
             if (currency !== 'TWD' && stateObj.rates) {
                 rate = stateObj.rates[`TWD_${currency}`] || 1;
             }
+            
+            // 將資產轉回該帳戶的顯示幣別
+            let linkedAssetsValueLocal = linkedAssetsValueTWD / rate;
+            let totalValLocal = idleCash + linkedAssetsValueLocal;
+            let totalValTWD = (idleCash * rate) + linkedAssetsValueTWD;
+
             if (acc.includeInAssets !== false) {
-                totalBalance += (bal * rate);
+                totalBalance += totalValTWD;
             }
 
             const isInc = acc.includeInAssets !== false;
-            const typeLabel = { bank: '銀行', wallet: '電子錢包', cash: '現金' }[acc.type] || acc.type;
+            const typeLabel = { bank: '銀行', wallet: '電子錢包', cash: '現金', securities: '證券', crypto: '加密貨幣' }[acc.type] || acc.type;
             const logoUrl = getProviderLogo(acc.provider);
             
             let iconHtml_inner = '';
@@ -2444,6 +2502,9 @@ const ACCOUNT_PROVIDERS = {
             item.style.borderLeft = `4px solid ${color}`;
             item.style.paddingLeft = '10px';
 
+            const displayCurrency = currency === 'TWD' ? 'NT$' : currency;
+            const hasAssets = linkedAssetsValueLocal > 0;
+
             item.innerHTML = `
                 <div style="display:flex; align-items:center; gap:14px; flex:1;">
                     <div class="account-icon-badge" style="background:transparent; width:40px; height:40px; overflow:hidden; border-radius:50%;">
@@ -2455,7 +2516,8 @@ const ACCOUNT_PROVIDERS = {
                     </div>
                 </div>
                 <div style="text-align:right;">
-                    <div class="item-value positive" style="font-size:1.15rem; font-weight:800; font-family:'Inter', sans-serif;">${currency === 'TWD' ? 'NT$' : currency} ${bal.toLocaleString()}</div>
+                    <div class="item-value positive" style="font-size:1.15rem; font-weight:800; font-family:'Inter', sans-serif;">${displayCurrency} ${Math.round(totalValLocal).toLocaleString()}</div>
+                    ${hasAssets ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;">閒置 ${Math.round(idleCash).toLocaleString()} | 現貨 ${Math.round(linkedAssetsValueLocal).toLocaleString()}</div>` : (idleCash === 0 && (acc.type === 'securities' || acc.type === 'crypto') ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;">待放入現貨</div>` : ``)}
                 </div>
                 <div class="item-actions" style="margin-left:15px; display:flex; gap:8px;">
                     <button class="action-btn edit-acc-btn" data-id="${acc.id}" title="編輯帳戶" style="background:rgba(255,255,255,0.05);">
