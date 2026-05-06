@@ -817,8 +817,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentCash = legacyCashPool + accountsCashPool; 
 
         // 為相容舊有 UI 顯示，定義回傳變數
-        const demandDeposit = currentCash; 
         const reserveCash = state.reserveCash || 0;
+        const demandDeposit = currentCash - reserveCash; 
 
         let totalAssets = currentCash + investTotal;
         let totalDebts = 0;
