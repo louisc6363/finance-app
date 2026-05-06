@@ -1209,7 +1209,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!symbol.endsWith('.TW')) symbol += '.TW';
             }
 
-            let calculatedTotalCost = inputAmount * inputAvgCost;
+            let inputCurrency = document.getElementById('i-currency').value;
+            let rate = 1;
+            if (inputCurrency !== 'TWD') {
+                if (inputCurrency === 'USD') rate = 32.5; // Fallback
+                if (state.rates && state.rates[`TWD_${inputCurrency}`]) {
+                    rate = state.rates[`TWD_${inputCurrency}`];
+                } else if (state.rates && state.rates[`${inputCurrency}TWD`]) {
+                    rate = state.rates[`${inputCurrency}TWD`];
+                }
+            }
+            
+            let costInTWD = inputAvgCost * rate;
+            let calculatedTotalCost = inputAmount * costInTWD;
 
             // [修正] 字典屬性應為 .sym 而非 .symbol
             const supportedItems = assetDictionary[type] || [];
@@ -1228,7 +1240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 symbol: symbol,
                 amount: inputAmount,
                 totalCost: calculatedTotalCost,
-                currentPrice: inputAvgCost,
+                currentPrice: costInTWD, // 底層統一以 TWD 儲存
                 accountId: accId
             };
 
