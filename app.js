@@ -2239,6 +2239,7 @@ const ACCOUNT_PROVIDERS = {
         { code:"MAX",  name:"MAX (台灣交易所)",     color:"#20409a" },
         { code:"HOYA", name:"HOYABIT",            color:"#00b4d8" },
         { code:"BYB",  name:"Bybit",               color:"#ffb11a" },
+        { code:"PIO",  name:"Pionex (派網)",        color:"#ff6600" },
         { code:"BTB",  name:"BitoPro (幣託)",      color:"#004fa3" },
         { code:"ACE",  name:"ACE (王牌)",          color:"#00b0ff" },
         { code:"MM",   name:"MetaMask",            color:"#e2761b" },
