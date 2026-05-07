@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetPage === 'dashboard') updateDashboard(true);
             if (targetPage === 'investments') fetchPrices();
             if (targetPage === 'history') renderHistory();
+            if (targetPage === 'liabilities') updateRepayAccountList();
         });
     });
 
@@ -254,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     setupAutocomplete('d-bank', 'bank-suggestions', bankDictionary);
-    setupAutocomplete('d-repay-bank', 'repay-bank-suggestions', bankDictionary);
     // ✔ ac-provider 已改用視覺化選擇器，不再使用 autocomplete
 
     // --- 全局數值運算工具 ---
@@ -283,6 +283,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const now = new Date();
         const diff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
         return Math.max(0, diff);
+    };
+
+    const updateRepayAccountList = () => {
+        const select = document.getElementById('d-repay-account-id');
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- 請選擇扣款帳戶 --</option>';
+        state.accounts.forEach(acc => {
+            const opt = document.createElement('option');
+            opt.value = acc.id;
+            opt.textContent = acc.name;
+            select.appendChild(opt);
+        });
+        if (currentVal) select.value = currentVal;
     };
 
     const calculateBalance = (debt) => {
@@ -336,8 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     category: '[自動] 貸款還款',
                     date: nextDate.toISOString().split('T')[0],
                     relatedAsset: debt.name,
-                    linkId: debt.id
+                    linkId: debt.id,
+                    accountId: debt.repayAccountId // 綁定扣款帳戶
                 });
+                
+                // 【核心升級】聯動扣除銀行帳戶餘額
+                if (debt.repayAccountId) {
+                    const accIdx = state.accounts.findIndex(a => a.id === debt.repayAccountId);
+                    if (accIdx !== -1) {
+                        state.accounts[accIdx].balance -= debt.monthly;
+                    }
+                }
                 
                 lastDate = nextDate;
                 changed = true;
@@ -1310,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const syncCash = (mode === 'new');
             const debtData = {
                 bank: document.getElementById('d-bank').value,
-                repayBank: document.getElementById('d-repay-bank').value,
+                repayAccountId: document.getElementById('d-repay-account-id').value,
                 name: document.getElementById('d-name').value,
                 total: parseFloat(document.getElementById('d-total').value),
                 years: parseFloat(document.getElementById('d-years').value),
@@ -1619,8 +1642,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.closest('.edit-debt-btn').getAttribute('data-id');
             const item = state.debts.find(d => d.id === id);
             if (item) {
+                updateRepayAccountList(); // 先更新選單
                 document.getElementById('d-bank').value = item.bank || '';
-                document.getElementById('d-repay-bank').value = item.repayBank || '';
+                document.getElementById('d-repay-account-id').value = item.repayAccountId || '';
                 document.getElementById('d-name').value = item.name;
                 document.getElementById('d-total').value = item.total;
                 document.getElementById('d-years').value = item.years || '';
@@ -1885,6 +1909,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="detail-item">
                                     <div class="detail-label">每月扣款日期</div>
                                     <div class="detail-value">${d.payDate || '1'} 號</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">還款扣款帳戶</div>
+                                    <div class="detail-value" style="color:var(--accent-main); font-weight:700;">${state.accounts.find(a => a.id === d.repayAccountId)?.name || '未設定'}</div>
                                 </div>
                             </div>
                             <div class="progress-container">

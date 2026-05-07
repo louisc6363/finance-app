@@ -393,10 +393,11 @@
                                 <input type="text" id="d-bank" placeholder="搜尋銀行代碼或名稱 (如: 812 或 台新)" required autocomplete="off">
                                 <ul id="bank-suggestions" class="suggestions-list" style="display:none;"></ul>
                             </div>
-                            <div class="form-group" style="position: relative;">
-                                <label>還款銀行 (扣款單位)</label>
-                                <input type="text" id="d-repay-bank" placeholder="選擇您的扣款銀行" required autocomplete="off">
-                                <ul id="repay-bank-suggestions" class="suggestions-list" style="display:none;"></ul>
+                            <div class="form-group">
+                                <label>還款帳戶 (扣款來源)</label>
+                                <select id="d-repay-account-id" required>
+                                    <option value="">-- 請選擇扣款帳戶 --</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>債務名稱</label>
