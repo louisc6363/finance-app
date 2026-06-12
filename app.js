@@ -876,6 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingState = { txId: null, invId: null, debtId: null };
     const today = new Date().toISOString().split('T')[0];
     if (document.getElementById('t-date')) document.getElementById('t-date').value = today;
+    if (document.getElementById('i-date')) document.getElementById('i-date').value = today;
 
     const saveState = (recordToLocal = true) => {
         if (recordToLocal) localStorage.setItem('financeStateV10', JSON.stringify(state));
@@ -1373,6 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             captureHistory();
 
             const accId = document.getElementById('i-account').value;
+            const inputDate = document.getElementById('i-date').value || new Date().toISOString().split('T')[0];
             const invData = {
                 type: type,
                 symbol: symbol,
@@ -1380,9 +1382,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalCost: calculatedTotalCost,
                 currentPrice: costInTWD, // 底層統一以 TWD 儲存
                 accountId: accId,
+                date: inputDate,
                 valuationHistory: [{
                     id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                    date: new Date().toISOString().split('T')[0],
+                    date: inputDate,
                     price: costInTWD,
                     remark: '期初建立'
                 }]
@@ -1442,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 }
-                saveState(); iForm.reset(); fetchPrices();
+                saveState(); iForm.reset(); document.getElementById('i-date').value = today; fetchPrices();
                 renderAccounts(); // 刷新帳戶顯示
         });
     }
@@ -1769,6 +1772,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let avgCost = item.amount > 0 ? (item.totalCost / item.amount).toFixed(2) : '';
                 document.getElementById('i-cost').value = avgCost;
                 document.getElementById('i-account').value = item.accountId || '';
+                document.getElementById('i-date').value = item.date || today;
                 editingState.invId = id;
                 const btn = document.querySelector('#invest-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -2075,7 +2079,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="asset-icon ${iconClass}"><i class="fa-solid ${iconCode}"></i></div>
                             <div class="tx-details">
                                 <div class="item-name">${i.symbol} <span style="font-size:0.7rem; color:var(--primary); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; margin-left:5px;">${accName}</span></div>
-                                <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)}</div>
+                                <div class="item-sub">${i.type === 'bonds' ? '債券' : '資產'} | 數量: ${i.amount} | 成本: ${formatVal(cost)} | 日期: ${i.date || '未設定'}</div>
                             </div>
                         </div>
                         <div class="tx-right-panel" style="display:flex; align-items:center; gap: 10px;">
