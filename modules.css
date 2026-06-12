@@ -790,3 +790,254 @@
     background: rgba(251, 191, 36, 0.1);
     border-left: 3px solid #fbbf24;
 }
+
+/* ====================================================
+   行動端列表響應式重構 (Mobile RWD Cards Layout)
+   ==================================================== */
+@media (max-width: 768px) {
+    /* 資產卡片 RWD */
+    .asset-item {
+        display: grid !important;
+        grid-template-areas: 
+            "check info"
+            "check panel" !important;
+        grid-template-columns: auto 1fr !important;
+        gap: 12px !important;
+        padding: 16px !important;
+        align-items: start !important;
+    }
+    
+    .asset-item .item-checkbox-container {
+        grid-area: check;
+        align-self: center;
+    }
+    
+    .asset-item .tx-info {
+        grid-area: info;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .asset-item .tx-details {
+        overflow: hidden;
+        width: 100%;
+    }
+    
+    .asset-item .tx-details .item-name {
+        font-size: 1rem !important;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        white-space: normal !important;
+    }
+    
+    .asset-item .tx-details .item-sub {
+        font-size: 0.78rem !important;
+        white-space: normal !important;
+        line-height: 1.4;
+    }
+    
+    .asset-item .tx-right-panel {
+        grid-area: panel;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        width: 100% !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 12px;
+        margin-left: 0 !important;
+    }
+    
+    .asset-item .tx-right-panel > div:first-child {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+    
+    .asset-item .item-value {
+        font-size: 1.15rem !important;
+        text-align: left !important;
+    }
+    
+    .asset-item .item-price-change {
+        font-size: 0.78rem !important;
+        text-align: right !important;
+        margin-top: 0 !important;
+    }
+    
+    .asset-item .item-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 6px !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    .asset-item .item-actions .action-btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 8px 6px !important;
+        font-size: 0.75rem !important;
+        height: 34px !important;
+    }
+
+    /* 收支明細 RWD */
+    .tx-item {
+        display: grid !important;
+        grid-template-areas: 
+            "check info amount"
+            "check date actions" !important;
+        grid-template-columns: auto 1fr auto !important;
+        gap: 8px 12px !important;
+        padding: 14px 16px !important;
+        align-items: center !important;
+    }
+    
+    .tx-item .item-checkbox-container {
+        grid-area: check;
+        align-self: center;
+    }
+    
+    .tx-item .tx-info {
+        grid-area: info;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        width: auto !important;
+    }
+    
+    .tx-item .tx-details {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .tx-item .tx-cat {
+        font-size: 1rem !important;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    
+    .tx-item .tx-date {
+        grid-area: date;
+        font-size: 0.78rem !important;
+        color: var(--text-muted);
+        margin-top: 0 !important;
+        padding-left: 42px; /* 對齊圖示旁邊的類別文字 */
+    }
+    
+    .tx-item .tx-right-panel {
+        display: contents !important; /* 子元素直接放入 grid */
+    }
+    
+    .tx-item .tx-amount {
+        grid-area: amount;
+        font-size: 1.1rem !important;
+        font-weight: 800;
+        text-align: right;
+    }
+    
+    .tx-item .item-actions {
+        grid-area: actions;
+        display: flex !important;
+        gap: 8px;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        justify-content: flex-end;
+    }
+
+    /* 負債卡片 RWD */
+    .debt-main-info {
+        display: grid !important;
+        grid-template-areas: 
+            "check info"
+            "check panel" !important;
+        grid-template-columns: auto 1fr !important;
+        gap: 12px !important;
+        padding: 16px !important;
+        align-items: start !important;
+    }
+    
+    .debt-main-info .item-checkbox-container {
+        grid-area: check;
+        align-self: center;
+    }
+    
+    .debt-main-info .tx-info {
+        grid-area: info;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .debt-main-info .tx-details {
+        overflow: hidden;
+        width: 100%;
+    }
+    
+    .debt-main-info .tx-details .item-name {
+        font-size: 1rem !important;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        white-space: normal !important;
+    }
+    
+    .debt-main-info .tx-details .item-sub {
+        font-size: 0.78rem !important;
+        white-space: normal !important;
+        line-height: 1.4;
+    }
+    
+    .debt-main-info .tx-right-panel {
+        grid-area: panel;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        width: 100% !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 12px;
+        margin-left: 0 !important;
+    }
+    
+    .debt-main-info .tx-right-panel > div:first-child {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+    
+    .debt-main-info .item-value {
+        font-size: 1.15rem !important;
+        text-align: left !important;
+    }
+    
+    .debt-main-info .item-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 6px !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    .debt-main-info .item-actions .action-btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 8px 6px !important;
+        font-size: 0.75rem !important;
+        height: 34px !important;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
