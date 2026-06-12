@@ -1,4 +1,44 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- 0. 全域匯率管理與即時同步 ---
+    let fxRates = {
+        USD: 32.5,
+        HKD: 4.15,
+        SGD: 24.1
+    };
+
+    const updateSettingsUI = () => {
+        const usdEl = document.getElementById('rate-usd-display');
+        const hkdEl = document.getElementById('rate-hkd-display');
+        const sgdEl = document.getElementById('rate-sgd-display');
+        if (usdEl) usdEl.innerText = fxRates.USD.toFixed(2);
+        if (hkdEl) hkdEl.innerText = fxRates.HKD.toFixed(2);
+        if (sgdEl) sgdEl.innerText = fxRates.SGD.toFixed(2);
+    };
+
+    const fetchFxRates = async () => {
+        const currencies = ['USD', 'HKD', 'SGD'];
+        const promises = currencies.map(async (cur) => {
+            try {
+                let tUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${cur}TWD=X`;
+                let proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(tUrl)}`;
+                let res = await fetch(proxyUrl);
+                if (res.ok) {
+                    let yahooData = await res.json();
+                    if (yahooData.chart && yahooData.chart.result && yahooData.chart.result[0]) {
+                        let price = yahooData.chart.result[0].meta.regularMarketPrice;
+                        if (price > 0) {
+                            fxRates[cur] = price;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log(`Failed to fetch live ${cur}/TWD rate:`, e);
+            }
+        });
+        await Promise.all(promises);
+        updateSettingsUI();
+    };
+
     // --- 1. 導覽列與頁面切換 ---
     const navLinks = document.querySelectorAll('.nav-links li a');
     const sections = document.querySelectorAll('.page-section');
@@ -883,9 +923,9 @@ document.addEventListener('DOMContentLoaded', () => {
             state.accounts.forEach(acc => {
                 if (acc.includeInAssets !== false) {
                     let bal = Number(acc.balance) || 0;
-                    // 匯率換算處理 (暫時預設 USD 為 32.5)
+                    // 匯率換算處理 (使用即時匯率，Fallback 為 32.5)
                     let rate = 1;
-                    if (acc.currency === 'USD') rate = 32.5;
+                    if (acc.currency === 'USD') rate = fxRates.USD;
                     accountsCashPool += (bal * rate);
                 }
             });
@@ -1145,6 +1185,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const syncStatus = document.getElementById('sync-status');
         if (syncStatus) syncStatus.innerHTML = '<i class="fa-solid fa-rotate spinner"></i> 即時 API 報價同步中...';
 
+        // 先同步最新匯率
+        await fetchFxRates();
+
         let changed = false;
 
         let twDataCache = null;
@@ -1162,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`);
                     if (res.ok) {
                         let json = await res.json();
-                        let updatedPrice = parseFloat(json.price) * 32.5;
+                        let updatedPrice = parseFloat(json.price) * fxRates.USD;
                         if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) { inv.currentPrice = updatedPrice; changed = true; }
                     }
                 } else if (inv.type === 'tw_stock') {
@@ -1186,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (yahooData.chart && yahooData.chart.result && yahooData.chart.result[0]) {
                             let price = yahooData.chart.result[0].meta.regularMarketPrice;
                             let currency = yahooData.chart.result[0].meta.currency;
-                            let updatedPrice = currency === 'USD' ? (price * 32.5) : price;
+                            let updatedPrice = currency === 'USD' ? (price * fxRates.USD) : price;
                             if (updatedPrice > 0 && Math.abs(inv.currentPrice - updatedPrice) > 1) { inv.currentPrice = updatedPrice; changed = true; }
                         }
                     }
@@ -1297,7 +1340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let inputCurrency = document.getElementById('i-currency').value;
             let rate = 1;
             if (inputCurrency !== 'TWD') {
-                if (inputCurrency === 'USD') rate = 32.5; // Fallback
+                if (inputCurrency === 'USD') rate = fxRates.USD; // Use live rate
                 if (state.rates && state.rates[`TWD_${inputCurrency}`]) {
                     rate = state.rates[`TWD_${inputCurrency}`];
                 } else if (state.rates && state.rates[`${inputCurrency}TWD`]) {
@@ -1467,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     if (target.type === 'crypto') {
                         let res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${target.symbol}USDT`);
-                        if (res.ok) { let json = await res.json(); currentTwdPrice = parseFloat(json.price) * 32.5; }
+                        if (res.ok) { let json = await res.json(); currentTwdPrice = parseFloat(json.price) * fxRates.USD; }
                     } else if (target.type === 'tw_stock') {
                         let res = await fetch('https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL'));
                         if (res.ok) {
@@ -1486,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (yahooData.chart && yahooData.chart.result) {
                                 let price = yahooData.chart.result[0].meta.regularMarketPrice;
                                 let currency = yahooData.chart.result[0].meta.currency;
-                                currentTwdPrice = currency === 'USD' ? price * 32.5 : price;
+                                currentTwdPrice = currency === 'USD' ? price * fxRates.USD : price;
                             }
                         }
                     }
@@ -1802,9 +1845,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const displayCurrency = document.getElementById('portfolio-currency')?.value || 'TWD';
         let fxRate = 1;
-        if (displayCurrency === 'USD') fxRate = 1 / 32.5;
-        if (displayCurrency === 'HKD') fxRate = 1 / 4.15;
-        if (displayCurrency === 'SGD') fxRate = 1 / 24.1;
+        if (displayCurrency === 'USD') fxRate = 1 / fxRates.USD;
+        if (displayCurrency === 'HKD') fxRate = 1 / fxRates.HKD;
+        if (displayCurrency === 'SGD') fxRate = 1 / fxRates.SGD;
 
         const formatVal = (val) => {
             let converted = val * fxRate;
@@ -2771,4 +2814,60 @@ const ACCOUNT_PROVIDERS = {
     window.renderAccounts = renderAccounts;
     setupAccountForm();
     renderAccounts();
+    fetchFxRates();
+
+    // --- 資料備份與還原邏輯 (Settings) ---
+    const exportBtn = document.getElementById('export-data-btn');
+    const importBtn = document.getElementById('import-data-btn');
+    const importFileInput = document.getElementById('import-file');
+
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const dataStr = localStorage.getItem('financeStateV10');
+            if (!dataStr) {
+                alert('目前沒有資料可供匯出！');
+                return;
+            }
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `Stoical_Backup_${dateStr}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    if (importBtn && importFileInput) {
+        importBtn.addEventListener('click', () => {
+            if (confirm('⚠️ 警告：匯入備份將會【完全覆蓋】您目前的所有的資料！\n\n您確定要繼續嗎？這項操作無法復原。')) {
+                importFileInput.click();
+            }
+        });
+
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+                    // 簡易驗證資料格式
+                    if (!jsonData.accounts || !jsonData.transactions || !jsonData.investments) {
+                        throw new Error("無效的備份檔案格式");
+                    }
+                    localStorage.setItem('financeStateV10', JSON.stringify(jsonData));
+                    alert('✅ 資料匯入成功！系統即將重新載入。');
+                    window.location.reload();
+                } catch (err) {
+                    alert('❌ 匯入失敗：檔案格式不正確或損毀 (' + err.message + ')');
+                } finally {
+                    importFileInput.value = ''; // 重置 input 以允許重複上傳相同檔案
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
 });

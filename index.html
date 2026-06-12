@@ -29,6 +29,7 @@
                 <li><a href="#" data-page="investments"><i class="fa-solid fa-chart-pie"></i> 投資組合</a></li>
                 <li><a href="#" data-page="liabilities"><i class="fa-solid fa-credit-card"></i> 負債管理</a></li>
                 <li><a href="#" data-page="history"><i class="fa-solid fa-clock-rotate-left"></i> 歷史紀錄</a></li>
+                <li><a href="#" data-page="settings"><i class="fa-solid fa-gear"></i> 系統設定</a></li>
             </ul>
         </nav>
 
@@ -602,6 +603,51 @@
                         </div>
                         <div id="account-list">
                             <!-- JS 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="page-section">
+                <div class="card glass" style="max-width: 600px; margin: 0 auto; text-align: center;">
+                    <div style="margin-bottom: 20px;">
+                        <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: var(--primary);"></i>
+                    </div>
+                    <h2>資料備份與安全</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">為保護您的隱私，所有財務資料皆儲存在您的瀏覽器本地端。<br>請定期匯出備份，以免清除瀏覽器資料時遺失您的紀錄。</p>
+                    
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button id="export-data-btn" class="action-btn" style="background: var(--primary); color: white; padding: 12px 24px; font-size: 1rem;"><i class="fa-solid fa-download"></i> 匯出 JSON 備份檔</button>
+                        <button id="import-data-btn" class="action-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); padding: 12px 24px; font-size: 1rem;"><i class="fa-solid fa-upload"></i> 匯入並還原資料</button>
+                    </div>
+                    
+                    <!-- 隱藏的檔案上傳元件 -->
+                    <input type="file" id="import-file" style="display:none;" accept=".json">
+                    
+                    <div style="margin-top: 25px; font-size: 0.85rem; color: var(--text-muted); text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <strong>⚠️ 注意事項：</strong><br>
+                        1. 匯入備份檔將會<b>完全覆蓋</b>當前系統中的所有資料。<br>
+                        2. 匯入前請務必確認檔案來源安全無虞。
+                    </div>
+
+                    <!-- 即時匯率資訊區塊 -->
+                    <div style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px; text-align: left;">
+                        <h3 style="margin-top: 0; font-size: 1.1rem; display: flex; align-items: center;"><i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 8px;"></i> 即時匯率資訊 (對台幣 TWD)</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">資料來源自 Yahoo Finance，系統會自動在背景同步最新匯率以折算外幣資產。</p>
+                        <div style="display: flex; gap: 15px; justify-content: space-between; flex-wrap: wrap;">
+                            <div class="card glass" style="flex: 1; min-width: 120px; text-align: center; padding: 15px; margin: 0; background: rgba(255,255,255,0.03);">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">USD 美金</div>
+                                <div id="rate-usd-display" style="font-size: 1.25rem; font-weight: 700; color: var(--accent-main); margin-top: 5px;">32.50</div>
+                            </div>
+                            <div class="card glass" style="flex: 1; min-width: 120px; text-align: center; padding: 15px; margin: 0; background: rgba(255,255,255,0.03);">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">HKD 港幣</div>
+                                <div id="rate-hkd-display" style="font-size: 1.25rem; font-weight: 700; color: var(--accent-main); margin-top: 5px;">4.15</div>
+                            </div>
+                            <div class="card glass" style="flex: 1; min-width: 120px; text-align: center; padding: 15px; margin: 0; background: rgba(255,255,255,0.03);">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">SGD 新幣</div>
+                                <div id="rate-sgd-display" style="font-size: 1.25rem; font-weight: 700; color: var(--accent-main); margin-top: 5px;">24.10</div>
+                            </div>
                         </div>
                     </div>
                 </div>
