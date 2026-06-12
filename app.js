@@ -1120,8 +1120,189 @@ document.addEventListener('DOMContentLoaded', () => {
     const manageMode = { tx: false, inv: false, debt: false };
     const selectedIds = { tx: new Set(), inv: new Set(), debt: new Set() };
 
+    // --- 歷史淨資產趨勢圖 (Line Chart) ---
+    let currentTrendFilter = '30';
+
+    const backfillNetWorthHistory = () => {
+        if (!state.netWorthHistory) state.netWorthHistory = [];
+        if (state.netWorthHistory.length >= 5) return;
+
+        const history = [];
+        const today = new Date();
+        const dataToday = getCalculatedData();
+        let runningNetWorth = dataToday.netWorth;
+        let runningAssets = dataToday.totalAssets;
+        let runningDebts = dataToday.totalDebts;
+
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+            const dateStr = date.toISOString().split('T')[0];
+
+            if (i > 0) {
+                const nextDayDateStr = new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                const nextDayTxs = state.transactions.filter(t => t.date === nextDayDateStr);
+
+                nextDayTxs.forEach(t => {
+                    const amt = Number(t.amount) || 0;
+                    if (t.type === 'income') {
+                        runningNetWorth -= amt;
+                        runningAssets -= amt;
+                    } else if (t.type === 'expense') {
+                        runningNetWorth += amt;
+                        runningAssets += amt;
+                    }
+                });
+            }
+
+            history.unshift({
+                date: dateStr,
+                netWorth: runningNetWorth,
+                assets: runningAssets,
+                debts: runningDebts
+            });
+        }
+
+        state.netWorthHistory = history;
+    };
+
+    const renderNetWorthTrendChart = () => {
+        const ctx = document.getElementById('netWorthTrendChart');
+        if (!ctx) return;
+
+        if (!state.netWorthHistory) state.netWorthHistory = [];
+        let dataPoints = [...state.netWorthHistory];
+        dataPoints.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (currentTrendFilter === '30') {
+            dataPoints = dataPoints.slice(-30);
+        } else if (currentTrendFilter === '90') {
+            dataPoints = dataPoints.slice(-90);
+        }
+
+        const labels = dataPoints.map(d => {
+            const parts = d.date.split('-');
+            return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : d.date;
+        });
+        const netWorthData = dataPoints.map(d => Math.round(d.netWorth));
+
+        if (chartInstances.netWorthTrend) {
+            chartInstances.netWorthTrend.destroy();
+        }
+
+        const rCtx = ctx.getContext('2d');
+        const gradient = rCtx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+        chartInstances.netWorthTrend = new Chart(rCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '淨資產',
+                        data: netWorthData,
+                        borderColor: '#38bdf8',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: 'rgba(255,255,255,0.8)',
+                        pointBorderWidth: 1.5,
+                        pointRadius: dataPoints.length > 45 ? 1.5 : 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true,
+                        backgroundColor: gradient
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6,
+                        callbacks: {
+                            title: (items) => {
+                                const index = items[0].dataIndex;
+                                return `日期：${dataPoints[index].date}`;
+                            },
+                            label: (context) => {
+                                const index = context.dataIndex;
+                                const d = dataPoints[index];
+                                return [
+                                    ` 總資產: NT$ ${Math.round(d.assets).toLocaleString()}`,
+                                    ` 總負債: NT$ ${Math.round(d.debts).toLocaleString()}`,
+                                    ` 淨資產: NT$ ${Math.round(d.netWorth).toLocaleString()}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            color: 'rgba(255,255,255,0.4)',
+                            font: { size: 10 },
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: {
+                            color: 'rgba(255,255,255,0.4)',
+                            font: { size: 10 },
+                            callback: (val) => {
+                                if (val >= 1e8) return (val / 1e8).toFixed(1) + ' 億';
+                                if (val >= 1e4) return (val / 1e4).toFixed(0) + ' 萬';
+                                return val.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+
     const updateDashboard = (animate = true) => {
         const data = getCalculatedData();
+
+        // 增量記錄今日淨值
+        if (state) {
+            if (!state.netWorthHistory) state.netWorthHistory = [];
+            const todayStr = new Date().toISOString().split('T')[0];
+            const existingIdx = state.netWorthHistory.findIndex(h => h.date === todayStr);
+            const newRecord = {
+                date: todayStr,
+                netWorth: data.netWorth,
+                assets: data.totalAssets,
+                debts: data.totalDebts
+            };
+            if (existingIdx !== -1) {
+                state.netWorthHistory[existingIdx] = newRecord;
+            } else {
+                state.netWorthHistory.push(newRecord);
+            }
+            state.netWorthHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+            localStorage.setItem('financeStateV10', JSON.stringify(state));
+        }
+
+        // 渲染趨勢圖
+        renderNetWorthTrendChart();
 
         // Odometer 更新
         animateOdometer('total-networth', data.netWorth);
@@ -2442,6 +2623,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initCharts();
+    backfillNetWorthHistory();
+
+    const trendFilters = ['30d', '90d', 'all'];
+    trendFilters.forEach(f => {
+        document.getElementById(`btn-trend-${f}`)?.addEventListener('click', (e) => {
+            currentTrendFilter = f === '30d' ? '30' : f === '90d' ? '90' : 'all';
+            
+            document.querySelectorAll('#trend-filter-group button').forEach(btn => {
+                btn.style.background = 'rgba(255,255,255,0.08)';
+                btn.style.color = 'var(--text-muted)';
+                btn.style.border = '1px solid rgba(255,255,255,0.1)';
+            });
+            e.target.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+            e.target.style.color = 'white';
+            e.target.style.border = 'none';
+            
+            renderNetWorthTrendChart();
+        });
+    });
+
     updateDashboard(true);
     renderTransactions();
     renderInvestments();

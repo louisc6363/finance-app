@@ -167,6 +167,21 @@
                 </div>
             </div>
 
+            <!-- 新增：歷史淨資產趨勢圖 (寬卡片) -->
+            <div class="card glass chart-card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin-bottom: 0;">歷史淨資產趨勢</h3>
+                    <div style="display: flex; gap: 8px;" id="trend-filter-group">
+                        <button id="btn-trend-30d" data-filter="30" style="padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; transition: all 0.3s ease;">30天</button>
+                        <button id="btn-trend-90d" data-filter="90" style="padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;">90天</button>
+                        <button id="btn-trend-all" data-filter="all" style="padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;">全部</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="height: 280px; position: relative; width: 100%;">
+                    <canvas id="netWorthTrendChart"></canvas>
+                </div>
+            </div>
+
             <!-- ④ 第三行：圓餅圖 + 水平長條圖 -->
             <div class="dash-grid-2">
                 <div class="card glass chart-card asset-chart-card">
