@@ -606,6 +606,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.logs) state.logs = [];
     if (!state.transactions) state.transactions = [];
     if (!state.investments) state.investments = [];
+    state.investments.forEach(i => {
+        if (!i.valuationHistory) {
+            i.valuationHistory = [{
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                date: new Date().toISOString().split('T')[0],
+                price: Number(i.currentPrice) || (Number(i.totalCost) / Number(i.amount)) || 0,
+                remark: '期初建立'
+            }];
+        }
+    });
     if (!state.debts) state.debts = [];
     if (state.baseCash === undefined) state.baseCash = 0;
     if (!state.accounts) state.accounts = []; // 帳戶管理欄位
@@ -1369,7 +1379,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 amount: inputAmount,
                 totalCost: calculatedTotalCost,
                 currentPrice: costInTWD, // 底層統一以 TWD 儲存
-                accountId: accId
+                accountId: accId,
+                valuationHistory: [{
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    date: new Date().toISOString().split('T')[0],
+                    price: costInTWD,
+                    remark: '期初建立'
+                }]
             };
 
             if (editingState.invId) {
@@ -1377,7 +1393,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (idx !== -1) {
                     addLog('investments', 'edit', `修改部位資料: ${invData.symbol}`);
                     invData.currentPrice = state.investments[idx].currentPrice;
-                    state.investments[idx] = { ...state.investments[idx], ...invData };
+                    state.investments[idx] = { 
+                        ...state.investments[idx], 
+                        ...invData,
+                        valuationHistory: state.investments[idx].valuationHistory || invData.valuationHistory 
+                    };
                 }
                 editingState.invId = null;
                 const submitBtn = document.querySelector('#invest-form .submit-btn');
@@ -1485,6 +1505,96 @@ document.addEventListener('DOMContentLoaded', () => {
     let dcaState = { invId: null, symbol: null };
     const buyModal = document.getElementById('buy-modal');
     const bmForm = document.getElementById('buy-modal-form');
+
+    let valState = { invId: null };
+    const valuationModal = document.getElementById('valuation-modal');
+    const valForm = document.getElementById('val-modal-form');
+
+    const renderValuationHistory = (item) => {
+        const historyList = document.getElementById('val-history-list');
+        if (!historyList) return;
+        historyList.innerHTML = '';
+        
+        const sortedHistory = [...(item.valuationHistory || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        sortedHistory.forEach((record) => {
+            const initialRecord = item.valuationHistory[0] || record;
+            const diff = record.price - initialRecord.price;
+            const pct = initialRecord.price > 0 ? (diff / initialRecord.price) * 100 : 0;
+            const pnlClass = diff >= 0 ? 'price-up' : 'price-down';
+            const pnlSign = diff >= 0 ? '+' : '';
+            
+            const formattedPrice = record.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            
+            historyList.innerHTML += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 8px 12px; color: var(--text-muted);">${record.date}</td>
+                    <td style="padding: 8px 12px; text-align: right; font-weight: 600;">${formattedPrice}</td>
+                    <td style="padding: 8px 12px; text-align: right;" class="${pnlClass}">${pnlSign}${pct.toFixed(1)}%</td>
+                    <td style="padding: 8px 12px; color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${record.remark || ''}">${record.remark || 'N/A'}</td>
+                    <td style="padding: 8px 12px; text-align: center;">
+                        <button type="button" class="action-btn del-val-rec-btn" data-rec-id="${record.id}" style="background: none; border: none; color: var(--danger); cursor: pointer;" title="刪除此筆紀錄"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    };
+
+    const openValuationModal = (item) => {
+        valState = { invId: item.id };
+        document.getElementById('val-modal-subtitle').innerText = `目前資產：${item.symbol} (${item.type === 'bonds' ? '債券' : '離線/投資部位'})`;
+        document.getElementById('val-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('val-price').value = item.currentPrice;
+        document.getElementById('val-remark').value = '';
+        renderValuationHistory(item);
+        valuationModal.classList.add('show');
+    };
+
+    const closeValuationModal = () => {
+        valuationModal.classList.remove('show');
+        valState = { invId: null };
+        if (valForm) valForm.reset();
+    };
+
+    document.getElementById('val-cancel-btn')?.addEventListener('click', closeValuationModal);
+
+    if (valForm) {
+        valForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = document.getElementById('val-date').value;
+            const price = parseFloat(document.getElementById('val-price').value);
+            const remark = document.getElementById('val-remark').value.trim();
+            
+            if (!date || isNaN(price)) {
+                return alert("請輸入正確的日期與估值金額！");
+            }
+            
+            const item = state.investments.find(i => i.id === valState.invId);
+            if (item) {
+                captureHistory(); // For undo
+                
+                if (!item.valuationHistory) item.valuationHistory = [];
+                
+                const newRecord = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    date,
+                    price,
+                    remark: remark || '估值調整'
+                };
+                
+                item.valuationHistory.push(newRecord);
+                
+                const oldPrice = item.currentPrice;
+                item.currentPrice = price;
+                
+                addLog('investments', 'edit', `手動重估 [${item.symbol}] 價值：自 NT$ ${oldPrice.toLocaleString()} 調整為 NT$ ${price.toLocaleString()}`);
+                
+                saveState();
+                closeValuationModal();
+                alert(`✅ 成功調整 [${item.symbol}] 估值！`);
+            }
+        });
+    }
 
     document.getElementById('bm-cancel')?.addEventListener('click', () => {
         buyModal.classList.remove('show');
@@ -1663,6 +1773,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 const btn = document.querySelector('#invest-form .submit-btn');
                 btn.innerHTML = '<i class="fa-solid fa-pen"></i> 儲存修改'; btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
                 document.getElementById('invest-form').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        if (e.target.closest('.val-inv-btn')) {
+            const id = e.target.closest('.val-inv-btn').getAttribute('data-id');
+            const item = state.investments.find(i => i.id === id);
+            if (item) {
+                openValuationModal(item);
+            }
+        }
+
+        if (e.target.closest('.del-val-rec-btn')) {
+            const recId = e.target.closest('.del-val-rec-btn').getAttribute('data-rec-id');
+            const item = state.investments.find(i => i.id === valState.invId);
+            if (item && item.valuationHistory) {
+                if (item.valuationHistory.length <= 1) {
+                    alert('⚠️ 至少必須保留一筆估值紀錄（如期初紀錄）！');
+                    return;
+                }
+                if (confirm('確定要刪除這筆估值紀錄嗎？')) {
+                    captureHistory();
+                    item.valuationHistory = item.valuationHistory.filter(r => r.id !== recId);
+                    
+                    const remainingSorted = [...item.valuationHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+                    item.currentPrice = remainingSorted[0].price;
+                    
+                    addLog('investments', 'edit', `刪除 [${item.symbol}] 的一筆估值紀錄，目前現值調整為 ${item.currentPrice.toFixed(0)}`);
+                    
+                    saveState();
+                    renderValuationHistory(item);
+                }
             }
         }
 
@@ -1947,6 +2088,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="item-actions" style="gap: 5px;">
                                 <button class="action-btn inv-buy-btn" data-id="${i.id}" title="買進" style="background: #10b981; color: white; border:none;">買入</button>
                                 <button class="action-btn inv-sell-btn" data-id="${i.id}" title="賣出" style="background: #ef4444; color: white; border:none;">賣出</button>
+                                <button class="action-btn val-inv-btn" data-id="${i.id}" title="歷史估值與重估" style="background: #3b82f6; color: white; border:none;"><i class="fa-solid fa-chart-line"></i></button>
                                 <button class="action-btn edit-inv-btn" data-id="${i.id}" title="修改帳面資料"><i class="fa-solid fa-pen"></i></button>
                                 <button class="action-btn del-inv-btn" data-id="${i.id}" title="刪除明細"><i class="fa-solid fa-trash"></i></button>
                             </div>

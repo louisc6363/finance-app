@@ -658,6 +658,53 @@
     <!-- 復原操作按鈕 -->
     <button id="undo-btn" title="發現有誤？點擊復原上一步操作"><i class="fa-solid fa-rotate-left"></i> 復原上一步</button>
 
+    <!-- 資產估值與歷史 Modal -->
+    <div id="valuation-modal" class="modal-overlay">
+        <div class="card glass modal-card" style="max-width: 500px; padding: 25px;">
+            <h2 id="val-modal-title" style="font-size: 1.25rem;">資產歷史估值與重估</h2>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; margin-bottom: 15px;" id="val-modal-subtitle"></div>
+            
+            <!-- 歷史紀錄表格 -->
+            <div style="max-height: 180px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(0,0,0,0.15); margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                            <th style="padding: 8px 12px;">日期</th>
+                            <th style="padding: 8px 12px; text-align: right;">估值 (TWD)</th>
+                            <th style="padding: 8px 12px; text-align: right;">漲跌幅</th>
+                            <th style="padding: 8px 12px;">備註</th>
+                            <th style="padding: 8px 12px; text-align: center;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="val-history-list">
+                        <!-- JS 動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 新增重估表單 -->
+            <form id="val-modal-form" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 12px; margin-top: 0;"><i class="fa-solid fa-plus"></i> 新增估值紀錄</h3>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 0.8rem;">重估日期</label>
+                    <input type="date" id="val-date" required style="padding: 8px 12px; font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 0.8rem;">全新估值金額 (TWD 單價)</label>
+                    <input type="number" id="val-price" placeholder="請輸入此時點的估計單價" step="any" required min="0" style="padding: 8px 12px; font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-size: 0.8rem;">備註說明</label>
+                    <input type="text" id="val-remark" placeholder="例：實價登錄調整、折舊調整" style="padding: 8px 12px; font-size: 0.85rem;">
+                </div>
+                <div style="display:flex; gap:12px; margin-top:10px;">
+                    <button type="button" class="submit-btn" id="val-cancel-btn" style="background: rgba(255,255,255,0.08); color: var(--text-main); font-size: 0.9rem; padding: 10px 16px;">關閉</button>
+                    <button type="submit" class="submit-btn" style="background: var(--primary); color: white; font-size: 0.9rem; padding: 10px 16px;">儲存並重估</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 交易 Modal (買進/賣出) -->
     <div id="buy-modal" class="modal-overlay">
         <div class="card glass modal-card">
