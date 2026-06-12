@@ -292,6 +292,13 @@
                                     <option value="us_stock">美國股市與 ETF (US Stock)</option>
                                     <option value="bonds">債券與債券 ETF (Bonds)</option>
                                     <option value="commodity">貴金屬/原物料/匯率 (Commodity)</option>
+                                    <option value="insurance">保險 (Insurance)</option>
+                                    <option value="fund">基金 (Mutual Funds)</option>
+                                    <option value="real_estate">不動產 (Real Estate)</option>
+                                    <option value="fixed_deposit">定期存款 (Fixed Deposit)</option>
+                                    <option value="pension">退休金 (Pension)</option>
+                                    <option value="private_equity">私募股權/創投 (Private Equity)</option>
+                                    <option value="collectible">收藏品/另類投資 (Collectibles)</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -301,17 +308,17 @@
                                 </select>
                             </div>
                             <div class="form-group" style="position: relative;">
-                                <label>標的代號 / 公司名稱</label>
+                                <label id="label-i-symbol">標的代號 / 公司名稱</label>
                                 <input type="text" id="i-symbol" placeholder="搜索代號或名稱 (支援模糊搜尋)" required style="text-transform: uppercase;" autocomplete="off">
                                 <ul id="symbol-suggestions" class="suggestions-list" style="display:none;"></ul>
                             </div>
-                            <div class="form-group">
-                                <label>持有總數量 <span id="amount-hint" style="font-size:0.8rem; color:var(--text-muted);">(例如: 0.05 顆)</span></label>
+                            <div class="form-group" id="group-i-amount">
+                                <label id="label-i-amount">持有總數量 <span id="amount-hint" style="font-size:0.8rem; color:var(--text-muted);">(例如: 0.05 顆)</span></label>
                                 <input type="number" id="i-amount" placeholder="您目前持有的數量" step="any" required min="0">
                             </div>
                             <div class="form-group">
                                 <label style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
-                                    <span style="flex: 1; text-align: left;">平均買入單價</span>
+                                    <span id="label-i-cost-text" style="flex: 1; text-align: left;">平均買入單價</span>
                                     <select id="i-currency" style="width: 70px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.75rem; cursor: pointer; text-align: center;">
                                         <option value="TWD">TWD</option>
                                         <option value="USD">USD</option>

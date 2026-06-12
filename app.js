@@ -393,7 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            let matches = assetDictionary[type].filter(item =>
+            let dict = assetDictionary[type] || [];
+            let matches = dict.filter(item =>
                 item.sym.toLowerCase().includes(val) ||
                 item.name.toLowerCase().includes(val)
             ).sort((a, b) => {
@@ -440,13 +441,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 iSymbolInput.focus();
 
                 const amountHint = document.getElementById('amount-hint');
-                if (amountHint) {
-                    let v = typeEl.value;
-                    if (v === 'crypto') amountHint.innerText = '(例如: 0.05 顆)';
-                    else if (v === 'tw_stock') amountHint.innerText = '(台股 1張請填 1000 股)';
-                    else if (v === 'us_stock') amountHint.innerText = '(輸入實際股數)';
-                    else if (v === 'bonds') amountHint.innerText = '(債券 ETF 1張請填 1000 股)';
-                    else if (v === 'commodity') amountHint.innerText = '(輸入單位或合約數量)';
+                const labelSymbol = document.getElementById('label-i-symbol');
+                const labelCost = document.getElementById('label-i-cost-text');
+                const groupAmount = document.getElementById('group-i-amount');
+                const inputAmount = document.getElementById('i-amount');
+
+                let v = typeEl.value;
+                
+                if (groupAmount && inputAmount) {
+                    groupAmount.style.display = 'block';
+                    inputAmount.removeAttribute('readonly');
+                    if (inputAmount.value === '1') inputAmount.value = '';
+                }
+
+                if (v === 'crypto') {
+                    if (amountHint) amountHint.innerText = '(例如: 0.05 顆)';
+                    if (labelSymbol) labelSymbol.innerText = '標的代號 / 項目名稱';
+                    if (labelCost) labelCost.innerText = '平均買入單價';
+                } else if (v === 'tw_stock') {
+                    if (amountHint) amountHint.innerText = '(台股 1張請填 1000 股)';
+                    if (labelSymbol) labelSymbol.innerText = '標的代號 / 公司名稱';
+                    if (labelCost) labelCost.innerText = '平均買入單價';
+                } else if (v === 'us_stock') {
+                    if (amountHint) amountHint.innerText = '(輸入實際股數)';
+                    if (labelSymbol) labelSymbol.innerText = '標的代號 / 公司名稱';
+                    if (labelCost) labelCost.innerText = '平均買入單價';
+                } else if (v === 'bonds') {
+                    if (amountHint) amountHint.innerText = '(債券 ETF 1張請填 1000 股)';
+                    if (labelSymbol) labelSymbol.innerText = '標的代號 / 名稱';
+                    if (labelCost) labelCost.innerText = '平均買入單價';
+                } else if (v === 'commodity') {
+                    if (amountHint) amountHint.innerText = '(輸入單位或合約數量)';
+                    if (labelSymbol) labelSymbol.innerText = '代號 / 項目名稱';
+                    if (labelCost) labelCost.innerText = '平均買入單價';
+                } else if (v === 'insurance') {
+                    if (labelSymbol) labelSymbol.innerText = '保單名稱 / 號碼';
+                    if (labelCost) labelCost.innerText = '累計已繳保費 / 保單價值';
+                    if (groupAmount && inputAmount) { groupAmount.style.display = 'none'; inputAmount.value = '1'; }
+                } else if (v === 'real_estate') {
+                    if (labelSymbol) labelSymbol.innerText = '物件名稱 / 地址';
+                    if (labelCost) labelCost.innerText = '買入總價 / 當前估值';
+                    if (groupAmount && inputAmount) { groupAmount.style.display = 'none'; inputAmount.value = '1'; }
+                } else if (v === 'fixed_deposit') {
+                    if (labelSymbol) labelSymbol.innerText = '專案名稱 / 銀行';
+                    if (labelCost) labelCost.innerText = '存入本金';
+                    if (groupAmount && inputAmount) { groupAmount.style.display = 'none'; inputAmount.value = '1'; }
+                } else if (v === 'pension') {
+                    if (labelSymbol) labelSymbol.innerText = '帳戶名稱 (如勞退自提)';
+                    if (labelCost) labelCost.innerText = '累計投入本金';
+                    if (groupAmount && inputAmount) { groupAmount.style.display = 'none'; inputAmount.value = '1'; }
+                } else if (v === 'fund') {
+                    if (amountHint) amountHint.innerText = '(持有單位數)';
+                    if (labelSymbol) labelSymbol.innerText = '基金名稱 / 代號';
+                    if (labelCost) labelCost.innerText = '平均單位淨值';
+                } else if (v === 'private_equity') {
+                    if (amountHint) amountHint.innerText = '(持股數)';
+                    if (labelSymbol) labelSymbol.innerText = '公司名稱 / 專案';
+                    if (labelCost) labelCost.innerText = '每股成本';
+                } else if (v === 'collectible') {
+                    if (labelSymbol) labelSymbol.innerText = '物品名稱';
+                    if (labelCost) labelCost.innerText = '買入總價 / 估值';
+                    if (groupAmount && inputAmount) { groupAmount.style.display = 'none'; inputAmount.value = '1'; }
                 }
             });
         }
@@ -994,6 +1049,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let chartInstances = {};
 
+    // 1. 全域定義分類順序與語系標籤 (提供圖表與清單共用)
+    const GLOBAL_CATEGORY_CONFIG = [
+        { type: 'crypto', label: '加密貨幣 (Crypto)', short: '加密貨幣', icon: 'fa-bitcoin-sign', color: '#a855f7' },
+        { type: 'tw_stock', label: '台灣股市 (TW Stock)', short: '台灣股市', icon: 'fa-chart-line', color: '#3b82f6' },
+        { type: 'us_stock', label: '美國股市 (US Stock)', short: '美國股市', icon: 'fa-flag-usa', color: '#10b981' },
+        { type: 'bonds', label: '債券與 ETF (Bonds)', short: '債券/ETF', icon: 'fa-file-contract', color: '#f59e0b' },
+        { type: 'commodity', label: '匯率與貴金屬 (FX & Commodity)', short: '匯率/商品', icon: 'fa-coins', color: '#eab308' },
+        { type: 'insurance', label: '保險 (Insurance)', short: '保險', icon: 'fa-shield-halved', color: '#ec4899' },
+        { type: 'fund', label: '基金 (Mutual Funds)', short: '基金', icon: 'fa-cubes', color: '#14b8a6' },
+        { type: 'real_estate', label: '不動產 (Real Estate)', short: '不動產', icon: 'fa-building', color: '#f97316' },
+        { type: 'fixed_deposit', label: '定期存款 (Fixed Deposit)', short: '定存', icon: 'fa-piggy-bank', color: '#8b5cf6' },
+        { type: 'pension', label: '退休金 (Pension)', short: '退休金', icon: 'fa-seedling', color: '#84cc16' },
+        { type: 'private_equity', label: '私募股權/創投 (Private Equity)', short: '私募/創投', icon: 'fa-handshake', color: '#6366f1' },
+        { type: 'collectible', label: '收藏品/另類投資 (Collectibles)', short: '收藏/另類', icon: 'fa-gem', color: '#d946ef' }
+    ];
+
     // --- 批量管理狀態 ---
     const manageMode = { tx: false, inv: false, debt: false };
     const selectedIds = { tx: new Set(), inv: new Set(), debt: new Set() };
@@ -1040,33 +1111,24 @@ document.addEventListener('DOMContentLoaded', () => {
             else budgetBarEl.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
         }
 
-        // 圓餅圖更新
+        // 圓餅圖更新 (動態產生分類值)
         if (chartInstances.asset) {
-            let cryptoValue = 0, stockValue = 0, bondValue = 0, commodityValue = 0;
-            state.investments.forEach(i => {
-                if (i.type === 'crypto') cryptoValue += (i.amount * i.currentPrice);
-                else if (i.type === 'bonds') bondValue += (i.amount * i.currentPrice);
-                else if (i.type === 'commodity') commodityValue += (i.amount * i.currentPrice);
-                else stockValue += (i.amount * i.currentPrice);
+            let catValues = GLOBAL_CATEGORY_CONFIG.map(cat => {
+                return state.investments.filter(i => i.type === cat.type).reduce((acc, curr) => acc + (curr.amount * curr.currentPrice), 0);
             });
-            chartInstances.asset.data.datasets[0].data = [cryptoValue, stockValue, bondValue, commodityValue, data.currentCash];
+            // 圓餅圖標籤：[各投資類別..., '現金']
+            chartInstances.asset.data.datasets[0].data = [...catValues, data.currentCash];
             chartInstances.asset.update();
         }
 
-        // 水平長條圖更新
+        // 水平長條圖更新 (動態產生分類值)
         if (chartInstances.allocation && data.totalAssets > 0) {
-            let cryptoVal = 0, twStockVal = 0, usStockVal = 0, bondsVal = 0, commVal = 0;
-            state.investments.forEach(i => {
-                if (i.type === 'crypto') cryptoVal += i.amount * i.currentPrice;
-                else if (i.type === 'tw_stock') twStockVal += i.amount * i.currentPrice;
-                else if (i.type === 'us_stock') usStockVal += i.amount * i.currentPrice;
-                else if (i.type === 'bonds') bondsVal += i.amount * i.currentPrice;
-                else if (i.type === 'commodity') commVal += i.amount * i.currentPrice;
+            let catValues = GLOBAL_CATEGORY_CONFIG.map(cat => {
+                let val = state.investments.filter(i => i.type === cat.type).reduce((acc, curr) => acc + (curr.amount * curr.currentPrice), 0);
+                return parseFloat((val / data.totalAssets * 100).toFixed(1));
             });
-            const pct = v => parseFloat((v / data.totalAssets * 100).toFixed(1));
-            chartInstances.allocation.data.datasets[0].data = [
-                pct(cryptoVal), pct(twStockVal), pct(usStockVal), pct(bondsVal), pct(commVal), pct(data.currentCash)
-            ];
+            const pctCash = parseFloat((data.currentCash / data.totalAssets * 100).toFixed(1));
+            chartInstances.allocation.data.datasets[0].data = [...catValues, pctCash];
             chartInstances.allocation.update();
         }
 
@@ -1752,17 +1814,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        // 1. 定義分類順序與語系標籤
-        const categoryConfig = [
-            { type: 'crypto', label: '加密貨幣 (Crypto)', icon: 'fa-bitcoin-sign', color: '#a855f7' },
-            { type: 'tw_stock', label: '台灣股市 (TW Stock)', icon: 'fa-chart-line', color: '#3b82f6' },
-            { type: 'us_stock', label: '美國股市 (US Stock)', icon: 'fa-flag-usa', color: '#10b981' },
-            { type: 'bonds', label: '債券與 ETF (Bonds)', icon: 'fa-file-contract', color: '#f59e0b' },
-            { type: 'commodity', label: '匯率與貴金屬 (FX & Commodity)', icon: 'fa-coins', color: '#eab308' }
-        ];
-
         // 2. 進行分組資料處理
-        categoryConfig.forEach(cat => {
+        GLOBAL_CATEGORY_CONFIG.forEach(cat => {
             const filtered = state.investments.filter(i => i.type === cat.type);
             if (filtered.length === 0) return;
 
@@ -1811,6 +1864,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (i.type === 'crypto') { iconClass = 'ic-crypto'; iconCode = 'fa-bitcoin-sign'; }
                 else if (i.type === 'bonds') { iconClass = 'ic-debt'; iconCode = 'fa-file-contract'; }
                 else if (i.type === 'commodity') { iconClass = 'ic-commodity'; iconCode = 'fa-coins'; }
+                else if (i.type === 'insurance') { iconClass = 'ic-inc'; iconCode = 'fa-shield-halved'; }
+                else if (i.type === 'fund') { iconClass = 'ic-stock'; iconCode = 'fa-cubes'; }
+                else if (i.type === 'real_estate') { iconClass = 'ic-exp'; iconCode = 'fa-building'; }
+                else if (i.type === 'fixed_deposit') { iconClass = 'ic-inc'; iconCode = 'fa-piggy-bank'; }
+                else if (i.type === 'pension') { iconClass = 'ic-inc'; iconCode = 'fa-seedling'; }
+                else if (i.type === 'private_equity') { iconClass = 'ic-stock'; iconCode = 'fa-handshake'; }
+                else if (i.type === 'collectible') { iconClass = 'ic-exp'; iconCode = 'fa-gem'; }
 
                 let val = Number(i.amount) * Number(i.currentPrice);
                 let cost = Number(i.totalCost) || val;
@@ -1949,15 +2009,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = "'Outfit', sans-serif";
     const initCharts = () => {
+        const chartLabels = GLOBAL_CATEGORY_CONFIG.map(c => c.short).concat(['現金']);
+        const chartColors = GLOBAL_CATEGORY_CONFIG.map(c => c.color).concat(['#06b6d4']); // 現金用青色
+        const chartDataInit = new Array(chartLabels.length).fill(0);
+
         const ctxAsset = document.getElementById('assetChart');
         if (ctxAsset) {
             chartInstances.asset = new Chart(ctxAsset.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['加密貨幣', '股票', '債券', '匯率/商品', '現金'],
+                    labels: chartLabels,
                     datasets: [{
-                        data: [1, 1, 1, 1, 1],
-                        backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#eab308', '#10b981'],
+                        data: [...chartDataInit],
+                        backgroundColor: chartColors,
                         borderWidth: 0,
                         hoverOffset: 8
                     }]
@@ -1988,10 +2052,10 @@ document.addEventListener('DOMContentLoaded', () => {
             chartInstances.allocation = new Chart(ctxAlloc.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: ['加密貨幣', '台灣股市', '美國股市', '債券/ETF', '匯率/商品', '現金'],
+                    labels: chartLabels,
                     datasets: [{
-                        data: [0, 0, 0, 0, 0, 0],
-                        backgroundColor: ['#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#eab308', '#06b6d4'],
+                        data: [...chartDataInit],
+                        backgroundColor: chartColors,
                         borderRadius: 6,
                         borderSkipped: false
                     }]
